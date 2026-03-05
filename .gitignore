@@ -1,1 +1,5 @@
 Drivers/
+.stm32env
+.vscode/
+STM32*
+build/

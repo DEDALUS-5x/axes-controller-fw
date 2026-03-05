@@ -9,6 +9,9 @@
 
 */
 
+#ifndef __TYPES_H__
+#define __TYPES_H__
+
 // PID struct
 typedef struct {
     float _kp, _ki, _kd;
@@ -31,5 +34,7 @@ typedef struct {
 typedef struct {
     Encoder *_feedback;
     PID _pid;
-    uint32_t *_pwm_register; // * al registro CCR del timer configurato in pwm
+    volatile uint32_t *_pwm_register; // * al registro CCR del timer configurato in pwm
 } Axis;
+
+#endif

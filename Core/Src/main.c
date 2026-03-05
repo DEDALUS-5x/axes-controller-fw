@@ -50,6 +50,18 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+/* USER CODE BEGIN PV */
+
+uint16_t spi1_rx_buf[1] __attribute__((aligned(32))); // Encoder Rotativo (SPI2)
+uint16_t spi4_rx_buf[1] __attribute__((aligned(32))); // Corrente Allegro (SPI4)
+
+Encoder enc_rot_X = {0};
+Encoder enc_lin_X = {0};
+Axis axis_X;
+
+float current_sense_X = 0.0f;
+
+/* USER CODE END PV */
 
 /* USER CODE END PV */
 
@@ -116,6 +128,21 @@ int main(void)
   MX_TIM4_Init();
   MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
+
+  axis_X._feedback = &enc_rot_X; // rot per il loop di velocità
+  axis_X._pwm_register = &TIM1->CCR1;
+
+  PID_init(&axis_X._pid, 1.2f, 0.01f, 0.05f, 1000.0f);
+
+  HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_ALL); // enc lineare
+
+  HAL_SPI_Receive_DMA(&hspi1, (uint8_t*)spi1_rx_buf, 1); // encoder rotativo
+  HAL_SPI_Receive_DMA(&hspi4, (uint8_t*)spi4_rx_buf, 1); // sensore allegro
+
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1); // pwm per ibt4
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
+
+  HAL_TIM_Base_Start_IT(&htim6);
 
   /* USER CODE END 2 */
 
@@ -210,7 +237,7 @@ void PeriphCommonClock_Config(void)
 
 /* USER CODE BEGIN 4 */
 
-void Apply_Motor_Output(Axis *axis, TIM_HandleTypeDef *htim, uint32_t channel1, uint32_t channel2) {
+void motor_command(Axis *axis, TIM_HandleTypeDef *htim, uint32_t channel1, uint32_t channel2) {
     if (axis -> _pid._output > 0) {
         __HAL_TIM_SET_COMPARE(htim, channel1, (uint32_t)fabsf(axis -> _pid._output));
         __HAL_TIM_SET_COMPARE(htim, channel2, 0);
@@ -220,10 +247,29 @@ void Apply_Motor_Output(Axis *axis, TIM_HandleTypeDef *htim, uint32_t channel1, 
     }
 }
 
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
-{
-    if (htim->Instance == TIM6)
-    {
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
+
+  if (htim->Instance == TIM6) {
+    const float dt = 0.0001f;
+
+    enc_lin_X._raw_value = (int32_t)__HAL_TIM_GET_COUNTER(&htim2);
+    enc_lin_X._converted_value = (float)enc_lin_X._raw_value * 0.001f; 
+
+    SCB_InvalidateDCache_by_Addr((uint32_t*)spi1_rx_buf, sizeof(spi1_rx_buf));
+    enc_rot_X._raw_value = spi1_rx_buf[0] & 0x3FFF; // 14 bit AS5048A
+    enc_rot_X._converted_value = (float)enc_rot_X._raw_value * (360.0f / 16384.0f);
+
+    SCB_InvalidateDCache_by_Addr((uint32_t*)spi4_rx_buf, sizeof(spi4_rx_buf));
+    current_sense_X = (float)spi4_rx_buf[0] * (5.0f / 4096.0f); // conv  volt/amp
+
+    PID_Compute(&axis_X, dt);
+
+    motor_command(&axis_X, &htim1, TIM_CHANNEL_1, TIM_CHANNEL_2);
+  }
+
+
+    //if (htim->Instance == TIM6)
+    // {
         /* 1. ACQUISIZIONE DATI (SINCRONIZZAZIONE) */
         // Sull'H7, i dati scritti dal DMA in RAM non sono visti subito dalla CPU per via della Cache.
         // Dobbiamo invalidare la cache per le zone di memoria dove scrivono i DMA (Encoder, ADC).
@@ -239,7 +285,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         
         /* 4. AGGIORNAMENTO ATTUATORI (PWM) */
         // *Axis_X.pwm_register = (uint32_t)Axis_X.pid.output;
-    }
+//    }
+
 }
 
 /* USER CODE END 4 */
