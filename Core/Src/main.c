@@ -27,6 +27,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "types.h"
+#include "ctrl.h"
 
 /* USER CODE END Includes */
 
@@ -112,6 +114,7 @@ int main(void)
   MX_SPI4_Init();
   MX_ADC1_Init();
   MX_TIM4_Init();
+  MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -206,6 +209,38 @@ void PeriphCommonClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+void Apply_Motor_Output(Axis *axis, TIM_HandleTypeDef *htim, uint32_t channel1, uint32_t channel2) {
+    if (axis -> _pid._output > 0) {
+        __HAL_TIM_SET_COMPARE(htim, channel1, (uint32_t)fabsf(axis -> _pid._output));
+        __HAL_TIM_SET_COMPARE(htim, channel2, 0);
+    } else {
+        __HAL_TIM_SET_COMPARE(htim, channel1, 0);
+        __HAL_TIM_SET_COMPARE(htim, channel2, (uint32_t)fabsf(axis -> _pid._output));
+    }
+}
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+    if (htim->Instance == TIM6)
+    {
+        /* 1. ACQUISIZIONE DATI (SINCRONIZZAZIONE) */
+        // Sull'H7, i dati scritti dal DMA in RAM non sono visti subito dalla CPU per via della Cache.
+        // Dobbiamo invalidare la cache per le zone di memoria dove scrivono i DMA (Encoder, ADC).
+        // SCB_InvalidateDCache_by_Addr((uint32_t*)dma_buffer_encoders, sizeof(dma_buffer_encoders));
+
+        /* 2. CHIAMATA AI MODULI DI CALCOLO */
+        // Esempio: Aggiornamento posizione assi
+        // Update_Axis_Position(&Axis_X);
+        
+        /* 3. CALCOLO PID */
+        // Esempio: calcolo PID per asse X
+        // Axis_X.pid.output = Compute_PID(&Axis_X.pid, Axis_X.feedback->converted_value);
+        
+        /* 4. AGGIORNAMENTO ATTUATORI (PWM) */
+        // *Axis_X.pwm_register = (uint32_t)Axis_X.pid.output;
+    }
+}
 
 /* USER CODE END 4 */
 
