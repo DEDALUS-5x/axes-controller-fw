@@ -52,7 +52,7 @@
 /* USER CODE BEGIN PV */
 /* USER CODE BEGIN PV */
 
-uint16_t spi1_rx_buf[1] __attribute__((aligned(32))); // Encoder Rotativo (SPI2)
+uint16_t spi2_rx_buf[1] __attribute__((aligned(32))); // Encoder Rotativo (SPI2)
 uint16_t spi4_rx_buf[1] __attribute__((aligned(32))); // Corrente Allegro (SPI4)
 
 Encoder enc_rot_X = {0};
@@ -136,13 +136,18 @@ int main(void)
 
   HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_ALL); // enc lineare
 
-  HAL_SPI_Receive_DMA(&hspi1, (uint8_t*)spi1_rx_buf, 1); // encoder rotativo
+  HAL_SPI_Receive_DMA(&hspi2, (uint8_t*)spi2_rx_buf, 1); // encoder rotativo
   HAL_SPI_Receive_DMA(&hspi4, (uint8_t*)spi4_rx_buf, 1); // sensore allegro
 
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1); // pwm per ibt4
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
 
   HAL_TIM_Base_Start_IT(&htim6);
+
+  HAL_GPIO_WritePin(SPI4_CSS_X_GPIO_Port, SPI4_CSS_X_Pin, GPIO_PIN_RESET); // Attiva Allegro
+  HAL_GPIO_WritePin(SPI2_CSS_GPIO_Port, SPI2_CSS_Pin, GPIO_PIN_RESET); // Attiva Encoder
+
+  HAL_GPIO_WritePin(EN_STEPPERS_GPIO_Port, EN_STEPPERS_Pin, GPIO_PIN_RESET);
 
   /* USER CODE END 2 */
 
@@ -255,8 +260,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
     enc_lin_X._raw_value = (int32_t)__HAL_TIM_GET_COUNTER(&htim2);
     enc_lin_X._converted_value = (float)enc_lin_X._raw_value * 0.001f; 
 
-    SCB_InvalidateDCache_by_Addr((uint32_t*)spi1_rx_buf, sizeof(spi1_rx_buf));
-    enc_rot_X._raw_value = spi1_rx_buf[0] & 0x3FFF; // 14 bit AS5048A
+    SCB_InvalidateDCache_by_Addr((uint32_t*)spi2_rx_buf, sizeof(spi2_rx_buf));
+    enc_rot_X._raw_value = spi2_rx_buf[0] & 0x3FFF; // 14 bit AS5048A
     enc_rot_X._converted_value = (float)enc_rot_X._raw_value * (360.0f / 16384.0f);
 
     SCB_InvalidateDCache_by_Addr((uint32_t*)spi4_rx_buf, sizeof(spi4_rx_buf));
@@ -265,6 +270,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
     PID_Compute(&axis_X, dt);
 
     motor_command(&axis_X, &htim1, TIM_CHANNEL_1, TIM_CHANNEL_2);
+
+    static uint32_t freq_divider = 0;
+  if (++freq_divider >= 5000) { // debug
+      HAL_GPIO_TogglePin(LED_2_GPIO_Port, LED_2_Pin);
+      freq_divider = 0;
+}
   }
 
 
