@@ -37,4 +37,11 @@ typedef struct {
     volatile uint32_t *_pwm_register; // * al registro CCR del timer configurato in pwm
 } Axis;
 
+typedef struct {
+    float target_pos[3];    // X, Y1, Y2
+    float target_rot[2];
+    float velocity[3];
+    float acceleration[3];
+} ProfileCMD;
+
 #endif
