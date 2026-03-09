@@ -20,4 +20,6 @@ void PID_Compute(Axis *axis, float dt);
 
 void PID_reset(PID *pid);
 
+void motor_command(Axis *axis, TIM_HandleTypeDef *htim, uint32_t channel1, uint32_t channel2);
+
 #endif
