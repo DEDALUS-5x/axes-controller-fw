@@ -52,7 +52,7 @@
 /* USER CODE BEGIN PV */
 /* USER CODE BEGIN PV */
 
-uint16_t spi2_rx_buf[3] __attribute__((aligned(32))); // Encoder Rotativo (SPI2)
+uint16_t spi1_rx_buf[3] __attribute__((aligned(32))); // Encoder Rotativo (SPI1)
 uint16_t spi4_single_buf[1] __attribute__((aligned(32))); // Corrente Allegro (SPI4)
 
 // variabili di stato per la sequenza SPI4
@@ -156,11 +156,11 @@ int main(void)
   HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_2);
 
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15, GPIO_PIN_SET); 
-  HAL_GPIO_WritePin(SPI2_CSS_GPIO_Port, SPI2_CSS_Pin, GPIO_PIN_RESET); // daisy chain
+  HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_RESET); // daisy chain
   HAL_GPIO_WritePin(EN_STEPPERS_GPIO_Port, EN_STEPPERS_Pin, GPIO_PIN_RESET);
 
-  // start dma on spi2
-  HAL_SPI_Receive_DMA(&hspi2, (uint8_t*)spi2_rx_buf, 3); // 3 data in daisy chain
+  // start dma on spi1
+  HAL_SPI_Receive_DMA(&hspi1, (uint8_t*)spi1_rx_buf, 3); // 3 data in daisy chain
   HAL_TIM_Base_Start_IT(&htim6);
 
   /* USER CODE END 2 */
@@ -270,13 +270,13 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
     if (htim->Instance == TIM6) {
         const float dt = 0.0001f;
 
-        // spi2 daisy chain + invalidare cahce
-        SCB_InvalidateDCache_by_Addr((uint32_t*)spi2_rx_buf, sizeof(spi2_rx_buf));
+        // spi1 daisy chain + invalidare cahce
+        SCB_InvalidateDCache_by_Addr((uint32_t*)spi1_rx_buf, sizeof(spi1_rx_buf));
         
         // DMA buffer: [0]=EncX, [1]=EncY1, [2]=EncY2
-        enc_rot_X._converted_value = (float)(spi2_rx_buf[0] & 0x3FFF) * (360.0f / 16384.0f);
-        enc_rot_Y1._converted_value = (float)(spi2_rx_buf[1] & 0x3FFF) * (360.0f / 16384.0f);
-        enc_rot_Y2._converted_value = (float)(spi2_rx_buf[2] & 0x3FFF) * (360.0f / 16384.0f);
+        enc_rot_X._converted_value = (float)(spi1_rx_buf[0] & 0x3FFF) * (360.0f / 16384.0f);
+        enc_rot_Y1._converted_value = (float)(spi1_rx_buf[1] & 0x3FFF) * (360.0f / 16384.0f);
+        enc_rot_Y2._converted_value = (float)(spi1_rx_buf[2] & 0x3FFF) * (360.0f / 16384.0f);
 
         // spi4 read
         current_axis_idx = 0;
