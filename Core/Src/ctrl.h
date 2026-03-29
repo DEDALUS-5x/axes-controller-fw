@@ -16,7 +16,11 @@
 
 void PID_init(PID *pid, float kp, float ki, float kd, float limit);
 
-void PID_Compute(Axis *axis, float dt);
+// void PID_compute(Axis *axis, float dt);
+
+float PID_compute_pos(PID *pid, float current_pos, float dt);
+
+void PID_compute_vel(Axis *axis, float dt);
 
 void PID_reset(PID *pid);
 

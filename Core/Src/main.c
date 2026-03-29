@@ -135,22 +135,29 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   // x axis
-  axis_X._feedback = &enc_rot_X; 
+  axis_X._enc_rot = &enc_rot_X; 
+  axis_X._enc_lin = &enc_lin_X;
   axis_X._pwm_register = &TIM1->CCR1;
-  PID_init(&axis_X._pid, 1.2f, 0.01f, 0.05f, 1000.0f);
+
+  PID_init(&axis_X._pid_pos, 1.2f, 0.01f, 0.05f, 1000.0f);
+  PID_init(&axis_X._pid_vel, 10.0f, 1.5f, 0.0f, 1000.0f);
+
   HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_ALL);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1); 
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
 
   // y1 axis
-  axis_Y1._feedback = &enc_rot_Y1;
-  axis_Y1._pwm_register = &TIM1->CCR3; // MY1_IN1
-  PID_init(&axis_Y1._pid, 1.2f, 0.01f, 0.05f, 1000.0f);
+  axis_Y1._enc_rot = &enc_rot_Y1;
+  axis_Y1._enc_lin = &enc_lin_Y1;
+  axis_Y1._pwm_register = &TIM1->CCR3;
+  PID_init(&axis_Y1._pid_pos, 1.0f, 0.0f, 0.01f, 300.0f);
+  PID_init(&axis_Y1._pid_vel, 10.0f, 1.5f, 0.0f, 1000.0f);
   HAL_TIM_Encoder_Start(&htim3, TIM_CHANNEL_ALL);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
 
   // y2 axis
+  /*
   axis_Y2._feedback = &enc_rot_Y2;
   axis_Y2._pwm_register = &TIM8->CCR1; // MY2_IN1
   PID_init(&axis_Y2._pid, 1.2f, 0.01f, 0.05f, 1000.0f);
@@ -161,6 +168,7 @@ int main(void)
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15, GPIO_PIN_SET); 
   HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_RESET); // daisy chain
   HAL_GPIO_WritePin(EN_STEPPERS_GPIO_Port, EN_STEPPERS_Pin, GPIO_PIN_RESET);
+  */
 
   // start dma on spi1
   HAL_SPI_Receive_DMA(&hspi1, (uint8_t*)spi1_rx_buf, 3); // 3 data in daisy chain

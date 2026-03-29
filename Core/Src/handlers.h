@@ -31,6 +31,7 @@ extern volatile uint8_t current_axis_idx;
 extern Encoder enc_rot_X, enc_rot_Y1, enc_rot_Y2;
 extern Encoder enc_lin_X, enc_lin_Y1, enc_lin_Y2;
 
+void update_rotary_encoder(Encoder *enc, uint16_t raw_spi, float dt);
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim);
 void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi);
 

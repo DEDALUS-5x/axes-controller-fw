@@ -32,8 +32,11 @@ typedef struct {
 } Encoder;
 
 typedef struct {
-    Encoder *_feedback;
-    PID _pid;
+    Encoder *_enc_rot;
+    Encoder *_enc_lin;
+    PID _pid_pos;
+    PID _pid_vel;
+
     volatile uint32_t *_pwm_register; // * al registro CCR del timer configurato in pwm
 } Axis;
 
