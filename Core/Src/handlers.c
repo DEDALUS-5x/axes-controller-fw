@@ -72,6 +72,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
 
 void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi) {
+
+  /*
   if (hspi->Instance == SPI4) {
 
     SCB_InvalidateDCache_by_Addr((uint32_t*)spi4_single_buf, sizeof(spi4_single_buf));
@@ -100,4 +102,6 @@ void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi) {
       HAL_SPI_Receive_DMA(&hspi4, (uint8_t*)spi4_single_buf, 1);
     }
   }
+
+  */
 }
