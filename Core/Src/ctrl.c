@@ -55,6 +55,9 @@ float PID_compute_pos(PID *pid, float current_pos, float dt){
 void PID_compute_vel(Axis *axis, float dt) {
   float error = axis->_pid_vel._setpoint - axis->_enc_rot->_velocity;
 
+  float accel = (axis -> _target_vel - axis -> _last_vel) / dt;
+  axis -> _last_vel = axis -> _target_vel;
+
   float P = axis->_pid_vel._kp * error;
 
   axis->_pid_vel._integral += axis->_pid_vel._ki * error * dt;
@@ -68,11 +71,11 @@ void PID_compute_vel(Axis *axis, float dt) {
   // Fondamentale per non amplificare il rumore della derivazione numerica
   float raw_D = axis->_pid_vel._kd * (error - axis->_pid_vel._last_error) / dt;
   // Filtro alpha (N = 100 in Simulink corrisponde a circa 0.1 qui)
-  float filtered_D = (axis->_pid_vel._output * 0.9f) + (raw_D * 0.1f); 
-  
-  axis->_pid_vel._last_error = error;
+  float filtered_D = (axis->_pid_vel._last_D * 0.9f) + (raw_D * 0.1f); 
+  axis -> _pid_vel._last_D = filtered_D;
+  axis -> _pid_vel._last_error = error;
 
-  float out = P + axis->_pid_vel._integral + filtered_D;
+  float out = P + axis->_pid_vel._integral + filtered_D + (accel * axis -> _ka);
 
   if (out > axis->_pid_vel._output_limit) out = axis->_pid_vel._output_limit;
   if (out < -axis->_pid_vel._output_limit) out = -axis->_pid_vel._output_limit;

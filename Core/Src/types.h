@@ -20,6 +20,7 @@ typedef struct {
     float _last_error;
     float _output_limit;
     float _output;
+    float _last_D;
 } PID;
 
 // Encoder struct
@@ -36,6 +37,11 @@ typedef struct {
     Encoder *_enc_lin;
     PID _pid_pos;
     PID _pid_vel;
+
+    // from raspi
+    float _target_vel; // from feedforward
+    float _last_vel;
+    float _ka;
 
     volatile uint32_t *_pwm_register; // * al registro CCR del timer configurato in pwm
 } Axis;

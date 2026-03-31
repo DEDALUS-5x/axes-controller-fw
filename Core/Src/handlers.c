@@ -47,8 +47,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
           enc_lin_X._converted_value = (float)((int32_t)TIM2 -> CNT) * 0.1;
           enc_lin_Y1._converted_value = (float)((int32_t)TIM3 -> CNT) * 0.1;
 
-          axis_X._pid_vel._setpoint = PID_compute_pos(&axis_X._pid_pos, enc_lin_X._converted_value, dt_pos);
-          axis_Y1._pid_vel._setpoint = PID_compute_pos(&axis_Y1._pid_pos, enc_lin_Y1._converted_value, dt_pos);
+          axis_X._pid_vel._setpoint = PID_compute_pos(&axis_X._pid_pos, enc_lin_X._converted_value, dt_pos) + axis_X._target_vel;
+          axis_Y1._pid_vel._setpoint = PID_compute_pos(&axis_Y1._pid_pos, enc_lin_Y1._converted_value, dt_pos) + axis_Y1._target_vel;
 
         }
 
@@ -72,6 +72,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
 
 void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi) {
+
+  // gestione raspi, ricordati di scomporre il feedrate su X e Y --> oppure fattelo dare dalla raspi già scomposto
+
+
+
+  
 
   /*
   if (hspi->Instance == SPI4) {
