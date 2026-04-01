@@ -23,13 +23,13 @@ void update_rotary_encoder(Encoder *enc, uint16_t raw_spi, float dt){
     if (diff < -180.0f) diff += 360.0f;
 
     float instant_vel = diff / dt;
-    enc->_velocity = (enc->_velocity * 0.7f) + (instant_vel * 0.3f);
-    enc->_converted_value = new_pos;
+    enc -> _velocity = (enc -> _velocity * 0.7f) + (instant_vel * 0.3f);
+    enc -> _converted_value = new_pos;
 }
 
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-    if (htim->Instance == TIM6) {
+    if (htim -> Instance == TIM6) {
         const float dt = 0.0001f;
 
         // spi1 daisy chain + invalidare cahce
