@@ -24,12 +24,12 @@ extern TIM_HandleTypeDef htim8;
 
 extern uint16_t spi1_rx_buf[3];
 extern uint16_t spi4_single_buf[1];
-extern Axis axis_X, axis_Y1, axis_Y2;
+extern Axis axis_X, axis_Y;
 extern float current_values[3];
 extern volatile uint8_t current_axis_idx;
 
-extern Encoder enc_rot_X, enc_rot_Y1, enc_rot_Y2;
-extern Encoder enc_lin_X, enc_lin_Y1, enc_lin_Y2;
+extern Encoder enc_rot_X, enc_rot_Y;
+extern Encoder enc_lin_X, enc_lin_Y;
 
 void update_rotary_encoder(Encoder *enc, uint16_t raw_spi, float dt);
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim);
