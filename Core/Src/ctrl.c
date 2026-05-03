@@ -85,32 +85,6 @@ void PID_compute_vel(Axis *axis, float dt) {
   *(axis -> _pwm_register) = (uint32_t)fabsf(out);
 }
 
-/*
-void PID_Compute(Axis *axis, float dt){
-
-  float error = axis->_pid._setpoint - axis->_feedback->_converted_value;
-
-  float P = axis->_pid._kp * error;
-  axis->_pid._integral += axis->_pid._ki * error * dt; // sommatoria da un momento passato
-  float D = axis->_pid._kd * (error - axis->_pid._last_error) / dt;
-
-  float out = P + axis->_pid._integral + D;
-
-  if (out > axis->_pid._output_limit) {
-      out = axis->_pid._output_limit;
-
-  } else if (out < -axis->_pid._output_limit) {
-      out = -axis->_pid._output_limit;
-
-  }
-
-  axis->_pid._output = out;
-  axis->_pid._last_error = error;
-
-  *(axis->_pwm_register) = (uint32_t)fabsf(out);
-}
-  */
-
 void motor_command(Axis *axis, TIM_HandleTypeDef *htim, uint32_t channel1, uint32_t channel2) {
     if (axis -> _pid_vel._output > 0) {
         __HAL_TIM_SET_COMPARE(htim, channel1, (uint32_t)fabsf(axis -> _pid_vel._output));
@@ -119,4 +93,77 @@ void motor_command(Axis *axis, TIM_HandleTypeDef *htim, uint32_t channel1, uint3
         __HAL_TIM_SET_COMPARE(htim, channel1, 0);
         __HAL_TIM_SET_COMPARE(htim, channel2, (uint32_t)fabsf(axis -> _pid_vel._output));
     }
+}
+
+
+/*
+
+  ____  _                                 
+ / ___|| |_ ___ _ __  _ __   ___ _ __ ___ 
+ \___ \| __/ _ \ '_ \| '_ \ / _ \ '__/ __|
+  ___) | ||  __/ |_) | |_) |  __/ |  \__ \
+ |____/ \__\___| .__/| .__/ \___|_|  |___/
+               |_|   |_|                  
+
+*/
+
+
+void stepper_command(Stepper *stepper, float speed, TIM_HandleTypeDef *htim, uint32_t channel, GPIO_TypeDef *dir_port, uint16_t dir_pin) {
+    
+    HAL_GPIO_WritePin(dir_port, dir_pin, (speed >= 0.0f) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+
+    float freq = fabsf(speed) * STEPS_MM;
+
+    if (freq < 1.0f) {
+        __HAL_TIM_SET_COMPARE(htim, channel, 0); 
+        return;
+    }
+
+
+    uint32_t timer_base_clock;
+    
+
+    if (htim->Instance == TIM1 || htim->Instance == TIM8 || htim->Instance == TIM15 || 
+        htim->Instance == TIM16 || htim->Instance == TIM17) {
+        timer_base_clock = HAL_RCC_GetPCLK2Freq() * 2; // Solitamente APB2 x2 su H7
+    } else {
+        timer_base_clock = HAL_RCC_GetPCLK1Freq() * 2; // Solitamente APB1 x2 su H7
+    }
+
+    uint32_t psc = htim->Instance->PSC + 1; // Il registro PSC è (valore - 1)
+
+
+    uint32_t arr_val = (uint32_t)((float)timer_base_clock / (float)(psc * freq)) - 1;
+
+    if (arr_val < 10) arr_val = 10; // Evita frequenze troppo alte per il driver Moons'
+    if (arr_val > 0xFFFF && (htim->Instance != TIM2 && htim->Instance != TIM5)) {
+        arr_val = 0xFFFF; // Limite per timer a 16 bit
+    }
+
+    __HAL_TIM_SET_AUTORELOAD(htim, arr_val);
+    __HAL_TIM_SET_COMPARE(htim, channel, arr_val / 2); // Duty cycle al 50% 
+
+    if (!(htim->Instance->CR1 & TIM_CR1_CEN)) {
+        HAL_TIM_PWM_Start(htim, channel);
+    }
+}
+
+
+void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, GPIO_TypeDef *dir_port, uint16_t dir_pin, float max_speed, float kp) {
+
+  float current_pos = stepper->_enc_rot->_converted_value;
+
+  float error = stepper->_target - current_pos;
+
+  float required_speed = error * kp;
+
+  if (required_speed > max_speed) required_speed = max_speed;
+  if (required_speed < -max_speed) required_speed = -max_speed;
+
+  float tolerance = 0.01f; 
+  if (fabsf(error) < tolerance) {
+      required_speed = 0.0f;
+  }
+
+  stepper_update(stepper, required_speed, htim, channel, dir_port, dir_pin);
 }
