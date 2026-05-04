@@ -41,6 +41,7 @@ typedef struct {
     PID _pid_vel;
 
     // from raspi
+    float _target_pos;
     float _target_vel; // from feedforward
     float _last_vel;
     float _ka;
@@ -61,5 +62,17 @@ typedef struct {
     float velocity[3];
     float acceleration[3];
 } ProfileCMD;
+
+typedef struct __attribute__((packed)){
+    uint8_t start;
+    float x;
+    float y;
+    float z;
+    float a;
+    float c;
+    float vx;
+    float vy;
+    uint8_t check;
+} SPIPacket;
 
 #endif

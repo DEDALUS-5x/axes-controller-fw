@@ -138,10 +138,8 @@ int main(void)
   axis_X._enc_rot = &enc_rot_X; 
   axis_X._enc_lin = &enc_lin_X;
   axis_X._pwm_register = &TIM1->CCR1;
-
   PID_init(&axis_X._pid_pos, 1.2f, 0.01f, 0.05f, 1000.0f);
   PID_init(&axis_X._pid_vel, 10.0f, 1.5f, 0.0f, 1000.0f);
-
   HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_ALL);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1); 
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);

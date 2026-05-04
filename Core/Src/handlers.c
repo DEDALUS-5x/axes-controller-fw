@@ -55,31 +55,41 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
         PID_compute_vel(&axis_X, dt);
         PID_compute_vel(&axis_Y, dt);
 
-        // spi4 read
-        // current_axis_idx = 0;
-        // HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET); // CS x
-        // HAL_SPI_Receive_DMA(&hspi4, (uint8_t*)spi4_single_buf, 1);
-
-        // PID_compute(&axis_X, dt);
-        // PID_compute(&axis_Y, dt);
-        // PID_compute(&axis_Y2, dt);
-
         motor_command(&axis_X, &htim1, TIM_CHANNEL_1, TIM_CHANNEL_2);
         motor_command(&axis_Y, &htim1, TIM_CHANNEL_3, TIM_CHANNEL_4);
-        // motor_command(&axis_Y2, &htim8, TIM_CHANNEL_1, TIM_CHANNEL_2);
     }
 }
 
 
 void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi) {
+    if (hspi->Instance == SPI4) {
+    SPIPacket *packet = (SPIPacket *)spi_rx_buffer;
+
+    if (packet->start == 0xAA) {
+        
+      axis_X._target_pos = packet -> x;
+      axis_Y._target_pos = packet -> y;
+      // .target_z = packet -> z;
+      // raspi_data.target_a = packet -> a;
+      // raspi_data.target_c = packet -> c;
+      axis_X._target_vel = packet -> vx;
+      axis_Y._target_vel = packet -> vy;
+
+    }
+
+    // 4. Gestione Cache (Cruciale su STM32H7)
+    // Poiché il DMA scrive in RAM e la CPU legge, dobbiamo invalidare la cache
+    // per forzare la CPU a leggere il dato fresco dalla RAM e non dalla cache L1
+    // SCB_InvalidateDCache_by_Addr((uint32_t *)spi_rx_buffer, sizeof(SpiPacket_t));
+  }
+}
+
+
+/*
+void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi) {
 
   // gestione raspi, ricordati di scomporre il feedrate su X e Y --> oppure fattelo dare dalla raspi già scomposto
 
-
-
-  
-
-  /*
   if (hspi->Instance == SPI4) {
 
     SCB_InvalidateDCache_by_Addr((uint32_t*)spi4_single_buf, sizeof(spi4_single_buf));
@@ -109,5 +119,5 @@ void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi) {
     }
   }
 
-  */
-}
+  
+}*/
