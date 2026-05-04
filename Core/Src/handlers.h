@@ -25,6 +25,7 @@ extern TIM_HandleTypeDef htim8;
 extern uint16_t spi1_rx_buf[3];
 extern uint16_t spi4_single_buf[1];
 extern Axis axis_X, axis_Y;
+extern Stepper axis_Z, axis_A, axis_C;
 extern float current_values[3];
 extern volatile uint8_t current_axis_idx;
 

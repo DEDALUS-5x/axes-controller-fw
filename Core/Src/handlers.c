@@ -69,9 +69,9 @@ void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi) {
         
       axis_X._target_pos = packet -> x;
       axis_Y._target_pos = packet -> y;
-      // .target_z = packet -> z;
-      // raspi_data.target_a = packet -> a;
-      // raspi_data.target_c = packet -> c;
+      axis_Z._target = packet -> z;
+      axis_A._target = packet -> a;
+      axis_C._target = packet -> c;
       axis_X._target_vel = packet -> vx;
       axis_Y._target_vel = packet -> vy;
 
