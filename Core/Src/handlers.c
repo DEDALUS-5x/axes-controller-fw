@@ -40,6 +40,13 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
         // DMA buffer: [0]=EncX, [1]=EncY, [2]=EncY2
         update_rotary_encoder(&enc_rot_X, spi1_rx_buf[0], dt);
         update_rotary_encoder(&enc_lin_Y, spi1_rx_buf[1], dt);
+        update_rotary_encoder(&enc_rot_Z, spi2_rx_buf[0], dt);
+        update_rotary_encoder(&enc_rot_A, spi2_rx_buf[1], dt);
+        update_rotary_encoder(&enc_rot_C, spi2_rx_buf[2], dt);
+
+        stepper_loop(&axis_Z, &htim8, TIM_CHANNEL_1, STEP_Z1_GPIO_Port, STEP_Z1_Pin, 30.0f, 5.0f);
+        stepper_loop(&axis_A, &htim8, TIM_CHANNEL_2, STEP_P1_GPIO_Port, STEP_P1_Pin, 10.0f, 2.0f);
+        stepper_loop(&axis_C, &htim8, TIM_CHANNEL_3, STEP_Y_GPIO_Port, STEP_Y_Pin, 10.0f, 2.0f);
 
         if(++pid_counter >= 10){
 
@@ -64,6 +71,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
         motor_command(&axis_X, &htim1, TIM_CHANNEL_1, TIM_CHANNEL_2);
         motor_command(&axis_Y, &htim1, TIM_CHANNEL_3, TIM_CHANNEL_4);
+
+        // steppers
+
     }
 }
 

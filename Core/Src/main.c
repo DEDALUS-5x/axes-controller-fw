@@ -54,6 +54,7 @@
 /* USER CODE BEGIN PV */
 
 uint16_t spi1_rx_buf[3] __attribute__((aligned(32))); // Encoder Rotativo (SPI1)
+uint16_t spi2_rx_buf[3] __attribute__((aligned(32)));
 uint16_t spi4_single_buf[1] __attribute__((aligned(32))); // Corrente Allegro (SPI4)
 
 // variabili di stato per la sequenza SPI4
@@ -157,7 +158,7 @@ int main(void)
 
   // Z axis
   axis_Z._enc_rot = &enc_rot_Z;
-  
+
   // start dma on spi1
   HAL_SPI_Receive_DMA(&hspi1, (uint8_t*)spi1_rx_buf, 3); // 3 data in daisy chain
   HAL_TIM_Base_Start_IT(&htim6);

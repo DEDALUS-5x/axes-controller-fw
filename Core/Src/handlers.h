@@ -23,13 +23,14 @@ extern TIM_HandleTypeDef htim6;
 extern TIM_HandleTypeDef htim8;
 
 extern uint16_t spi1_rx_buf[3];
+extern uint16_t spi2_rx_buf[3];
 extern uint16_t spi4_single_buf[1];
 extern Axis axis_X, axis_Y;
 extern Stepper axis_Z, axis_A, axis_C;
 extern float current_values[3];
 extern volatile uint8_t current_axis_idx;
 
-extern Encoder enc_rot_X, enc_rot_Y;
+extern Encoder enc_rot_X, enc_rot_Y, enc_rot_Z, enc_rot_A, enc_rot_C;
 extern Encoder enc_lin_X, enc_lin_Y;
 
 extern uint8_t spi_rx_buffer[sizeof(SPIPacket)];
