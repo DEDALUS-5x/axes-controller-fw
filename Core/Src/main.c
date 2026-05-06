@@ -61,8 +61,9 @@ volatile uint8_t current_axis_idx = 0;
 float current_values[3];
 
 Axis axis_X, axis_Y;
+Stepper axis_Z, axis_A, axis_C;
 
-Encoder enc_rot_X, enc_rot_Y;
+Encoder enc_rot_X, enc_rot_Y, enc_rot_Z, enc_rot_A, enc_rot_C;
 Encoder enc_lin_X, enc_lin_Y;
 
 
@@ -154,6 +155,9 @@ int main(void)
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
 
+  // Z axis
+  axis_Z._enc_rot = &enc_rot_Z;
+  
   // start dma on spi1
   HAL_SPI_Receive_DMA(&hspi1, (uint8_t*)spi1_rx_buf, 3); // 3 data in daisy chain
   HAL_TIM_Base_Start_IT(&htim6);

@@ -165,5 +165,5 @@ void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, G
       required_speed = 0.0f;
   }
 
-  stepper_update(required_speed, htim, channel, dir_port, dir_pin);
+  stepper_command(required_speed, htim, channel, dir_port, dir_pin);
 }

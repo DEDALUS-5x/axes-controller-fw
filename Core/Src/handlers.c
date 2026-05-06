@@ -13,6 +13,8 @@
 #include <math.h>
 
 static uint8_t pid_counter = 0;
+static uint8_t led_counter = 0;
+uint8_t spi_rx_buffer[sizeof(SPIPacket)] __attribute__((aligned(32)));
 
 void update_rotary_encoder(Encoder *enc, uint16_t raw_spi, float dt){
 
@@ -50,6 +52,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
           axis_X._pid_vel._setpoint = PID_compute_pos(&axis_X._pid_pos, enc_lin_X._converted_value, dt_pos) + axis_X._target_vel;
           axis_Y._pid_vel._setpoint = PID_compute_pos(&axis_Y._pid_pos, enc_lin_Y._converted_value, dt_pos) + axis_Y._target_vel;
 
+        }
+
+        if(++led_counter >= 10000){
+          led_counter = 0;
+          HAL_GPIO_TogglePin(LED_1_GPIO_Port, LED_1_Pin);
         }
 
         PID_compute_vel(&axis_X, dt);

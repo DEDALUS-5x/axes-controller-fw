@@ -32,7 +32,7 @@ extern volatile uint8_t current_axis_idx;
 extern Encoder enc_rot_X, enc_rot_Y;
 extern Encoder enc_lin_X, enc_lin_Y;
 
-uint8_t spi_rx_buffer[sizeof(SPIPacket)];
+extern uint8_t spi_rx_buffer[sizeof(SPIPacket)];
 
 void update_rotary_encoder(Encoder *enc, uint16_t raw_spi, float dt);
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim);
