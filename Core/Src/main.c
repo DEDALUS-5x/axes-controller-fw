@@ -159,6 +159,12 @@ int main(void)
   // Z axis
   axis_Z._enc_rot = &enc_rot_Z;
 
+  // A axis
+  axis_A._enc_rot = &enc_rot_A;
+
+  // X axis
+  axis_C._enc_rot = &enc_rot_C;
+
   // start dma on spi1
   HAL_SPI_Receive_DMA(&hspi1, (uint8_t*)spi1_rx_buf, 3); // 3 data in daisy chain
   HAL_TIM_Base_Start_IT(&htim6);
