@@ -72,6 +72,10 @@ void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi) {
     if (hspi->Instance == SPI4) {
     SPIPacket *packet = (SPIPacket *)spi_rx_buffer;
 
+    // check on cubemx, it should be a circular buffer
+
+    SCB_InvalidateDCache_by_Addr((uint32_t *)spi_rx_buffer, sizeof(spi_rx_buffer));
+
     if (packet->start == 0xAA) {
         
       axis_X._target_pos = packet -> x;
