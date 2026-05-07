@@ -103,7 +103,7 @@ void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi) {
     }
 
     // homing procedure
-    if (packet -> start == 0xBB) {
+    if (packet -> start == 0xCC) {
 
       machine_state = 1;
       axis_X._pid_vel._output = -5.0f;
