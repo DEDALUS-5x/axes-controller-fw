@@ -15,6 +15,8 @@
 static uint8_t pid_counter = 0;
 static uint8_t led_counter = 0;
 uint8_t spi_rx_buffer[sizeof(SPIPacket)] __attribute__((aligned(32)));
+static uint8_t homing_counter = 0;
+
 
 void update_rotary_encoder(Encoder *enc, uint16_t raw_spi, float dt){
 
@@ -128,6 +130,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 
     if (GPIO_Pin == ES_X_Pin) {
 
+      homing_counter++;
+
       // timer linear encoder X
       TIM2 -> CNT = 0; 
       enc_lin_X._converted_value = 0.0f;
@@ -144,6 +148,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 
     if (GPIO_Pin == ES_Y1_Pin){
 
+      homing_counter++;
+
       TIM3 -> CNT = 0;
       enc_lin_Y._converted_value = 0.0f;
       axis_Y._pid_pos._setpoint = 0.0f;
@@ -158,9 +164,19 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 
     if (GPIO_Pin == ES_Z1_Pin){
 
+      homing_counter++;
+
       enc_rot_Z._offset = enc_rot_Z._converted_value;
     }
 
+    if(homing_counter == 5){
+      machine_state = 2;
+    }
+  }
+
+  if(machine_state == 2){
+
+    // ERROR! physical violations
   }
 
 }
