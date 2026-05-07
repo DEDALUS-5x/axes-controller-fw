@@ -56,6 +56,7 @@
 uint16_t spi1_rx_buf[3] __attribute__((aligned(32))); // Encoder Rotativo (SPI1)
 uint16_t spi2_rx_buf[3] __attribute__((aligned(32)));
 uint16_t spi4_single_buf[1] __attribute__((aligned(32))); // Corrente Allegro (SPI4)
+uint8_t machine_state = 0;
 
 // variabili di stato per la sequenza SPI4
 volatile uint8_t current_axis_idx = 0; 
@@ -140,6 +141,7 @@ int main(void)
   axis_X._enc_rot = &enc_rot_X; 
   axis_X._enc_lin = &enc_lin_X;
   axis_X._pwm_register = &TIM1->CCR1;
+  axis_X._enc_rot -> _offset = 0.0f;
   PID_init(&axis_X._pid_pos, 1.2f, 0.01f, 0.05f, 1000.0f);
   PID_init(&axis_X._pid_vel, 10.0f, 1.5f, 0.0f, 1000.0f);
   HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_ALL);
@@ -150,6 +152,7 @@ int main(void)
   axis_Y._enc_rot = &enc_rot_Y;
   axis_Y._enc_lin = &enc_lin_Y;
   axis_Y._pwm_register = &TIM1->CCR3;
+  axis_Y._enc_rot -> _offset = 0.0f;
   PID_init(&axis_Y._pid_pos, 1.0f, 0.0f, 0.01f, 300.0f);
   PID_init(&axis_Y._pid_vel, 10.0f, 1.5f, 0.0f, 1000.0f);
   HAL_TIM_Encoder_Start(&htim3, TIM_CHANNEL_ALL);
@@ -158,12 +161,15 @@ int main(void)
 
   // Z axis
   axis_Z._enc_rot = &enc_rot_Z;
+  axis_Z._enc_rot -> _offset = 0.0f;
 
   // A axis
   axis_A._enc_rot = &enc_rot_A;
+  axis_A._enc_rot -> _offset = 0.0f;
 
   // X axis
   axis_C._enc_rot = &enc_rot_C;
+  axis_C._enc_rot -> _offset = 0.0f;
 
   // start dma on spi1
   HAL_SPI_Receive_DMA(&hspi1, (uint8_t*)spi1_rx_buf, 3); // 3 data in daisy chain

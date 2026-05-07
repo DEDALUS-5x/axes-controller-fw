@@ -33,6 +33,15 @@ extern volatile uint8_t current_axis_idx;
 extern Encoder enc_rot_X, enc_rot_Y, enc_rot_Z, enc_rot_A, enc_rot_C;
 extern Encoder enc_lin_X, enc_lin_Y;
 
+extern uint8_t machine_state;
+/*
+MACHINE STATE
+- 0: init
+- 1: homing
+- 2: run
+- 3: error
+*/
+
 extern uint8_t spi_rx_buffer[sizeof(SPIPacket)];
 
 void update_rotary_encoder(Encoder *enc, uint16_t raw_spi, float dt);

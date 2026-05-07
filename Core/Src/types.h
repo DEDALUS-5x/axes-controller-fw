@@ -30,6 +30,7 @@ typedef struct {
     int32_t _raw_value;
     float _converted_value;
     float _velocity;
+    float _offset;
     // reference to DMA
 
 } Encoder;

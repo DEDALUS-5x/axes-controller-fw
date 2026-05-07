@@ -20,13 +20,15 @@ void update_rotary_encoder(Encoder *enc, uint16_t raw_spi, float dt){
 
   float new_pos = (float)(raw_spi & 0x3FFF) * (360.0f / 16384.0f);
     
-    float diff = new_pos - enc->_converted_value;
-    if (diff > 180.0f) diff -= 360.0f;
-    if (diff < -180.0f) diff += 360.0f;
+  float diff = new_pos - enc->_converted_value;
+  if (diff > 180.0f) diff -= 360.0f;
+  if (diff < -180.0f) diff += 360.0f;
 
-    float instant_vel = diff / dt;
-    enc -> _velocity = (enc -> _velocity * 0.7f) + (instant_vel * 0.3f);
-    enc -> _converted_value = new_pos;
+  float instant_vel = diff / dt;
+  enc -> _velocity = (enc -> _velocity * 0.7f) + (instant_vel * 0.3f);
+  enc -> _converted_value = new_pos;
+
+  enc -> _converted_value = enc -> _converted_value - enc -> _offset;
 }
 
 
@@ -66,8 +68,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
           HAL_GPIO_TogglePin(LED_1_GPIO_Port, LED_1_Pin);
         }
 
-        PID_compute_vel(&axis_X, dt);
-        PID_compute_vel(&axis_Y, dt);
+        if(machine_state == 2){
+          PID_compute_vel(&axis_X, dt);
+          PID_compute_vel(&axis_Y, dt);
+        }
 
         motor_command(&axis_X, &htim1, TIM_CHANNEL_1, TIM_CHANNEL_2);
         motor_command(&axis_Y, &htim1, TIM_CHANNEL_3, TIM_CHANNEL_4);
@@ -85,6 +89,8 @@ void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi) {
     SCB_InvalidateDCache_by_Addr((uint32_t *)spi_rx_buffer, sizeof(spi_rx_buffer));
 
     if (packet->start == 0xAA) {
+
+      machine_state = 2;
         
       axis_X._target_pos = packet -> x;
       axis_Y._target_pos = packet -> y;
@@ -96,11 +102,67 @@ void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi) {
 
     }
 
+    // homing procedure
+    if (packet -> start == 0xBB) {
+
+      machine_state = 1;
+      axis_X._pid_vel._output = -5.0f;
+      axis_Y._pid_vel._output = -5.0f;
+      axis_Z._target = 0;
+      axis_A._target = 0;
+      axis_C._target = 0;
+
+      // motors command already embedded in tim6 handler. just keep a constnat pid output (pid disabled)
+    }
+
     // 4. Gestione Cache (Cruciale su STM32H7)
     // Poiché il DMA scrive in RAM e la CPU legge, dobbiamo invalidare la cache
     // per forzare la CPU a leggere il dato fresco dalla RAM e non dalla cache L1
     // SCB_InvalidateDCache_by_Addr((uint32_t *)spi_rx_buffer, sizeof(SpiPacket_t));
   }
+}
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
+
+  if(machine_state == 1){
+
+    if (GPIO_Pin == ES_X_Pin) {
+
+      // timer linear encoder X
+      TIM2 -> CNT = 0; 
+      enc_lin_X._converted_value = 0.0f;
+      enc_rot_X._converted_value = 0.0f;
+      axis_X._pid_pos._setpoint = 0.0f;
+      axis_X._pid_vel._setpoint = 0.0f;
+
+      // offset rot encoder
+      enc_rot_X._offset = enc_rot_X._converted_value;
+
+      PID_reset(&(axis_X._pid_pos));
+      PID_reset(&(axis_X._pid_vel));
+    }
+
+    if (GPIO_Pin == ES_Y1_Pin){
+
+      TIM3 -> CNT = 0;
+      enc_lin_Y._converted_value = 0.0f;
+      axis_Y._pid_pos._setpoint = 0.0f;
+      axis_Y._pid_vel._setpoint = 0.0f;
+
+      // offset rot encoder
+      enc_rot_Y._offset = enc_rot_Y._converted_value;
+
+      PID_reset(&(axis_Y._pid_pos));
+      PID_reset(&(axis_Y._pid_vel));
+    }
+
+    if (GPIO_Pin == ES_Z1_Pin){
+
+      enc_rot_Z._offset = enc_rot_Z._converted_value;
+    }
+
+  }
+
 }
 
 
