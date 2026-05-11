@@ -132,6 +132,10 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 
       homing_counter++;
 
+      // stop motors
+      __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 0);
+      __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
+
       // timer linear encoder X
       TIM2 -> CNT = 0; 
       enc_lin_X._converted_value = 0.0f;
@@ -149,6 +153,10 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
     if (GPIO_Pin == ES_Y1_Pin){
 
       homing_counter++;
+
+      // stop motors
+      __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 0);
+      __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_4, 0);
 
       TIM3 -> CNT = 0;
       enc_lin_Y._converted_value = 0.0f;
@@ -176,7 +184,13 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 
   if(machine_state == 2){
 
-    // ERROR! physical violations
+    // ERROR! physical violations, stop motors
+    __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 0);
+    __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
+    __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 0);
+    __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_4, 0);
+
+    while(1); // required power cycle. The endstop interrupts have the higher priority
   }
 
 }
