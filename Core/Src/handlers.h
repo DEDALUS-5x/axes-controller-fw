@@ -44,6 +44,7 @@ MACHINE STATE
 */
 
 extern uint8_t spi_rx_buffer[sizeof(SPIPacket)];
+extern uint8_t spi1_tx_buf[sizeof(SPIPacket)];
 
 void update_rotary_encoder(Encoder *enc, uint16_t raw_spi, float dt);
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim);

@@ -38,6 +38,16 @@ void update_rotary_encoder(Encoder *enc, uint16_t raw_spi, float dt){
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
     if (htim -> Instance == TIM6) {
+
+        /*
+          _  ___  _  ___         
+         / |/ _ \| |/ / |__  ____
+         | | | | | ' /| '_ \|_  /
+         | | |_| | . \| | | |/ / 
+         |_|\___/|_|\_\_| |_/___|
+                                 
+        */
+
         const float dt = 0.0001f;
 
         // spi2-3 daisy chain + invalidare cahce
@@ -57,15 +67,42 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
         if(++pid_counter >= 10){
 
+          /*
+            _ _  ___         
+           / | |/ / |__  ____
+           | | ' /| '_ \|_  /
+           | | . \| | | |/ / 
+           |_|_|\_\_| |_/___|
+                             
+          */
+
           pid_counter = 0;
           const float dt_pos = 0.001f;
 
-          enc_lin_X._converted_value = (float)((int32_t)TIM2 -> CNT) * 0.1;
-          enc_lin_Y._converted_value = (float)((int32_t)TIM3 -> CNT) * 0.1;
+          // int16_t in order to avoid overflow in case of negative values
+          enc_lin_X._converted_value = (float)((int16_t)TIM2 -> CNT) * 0.1;
+          enc_lin_Y._converted_value = (float)((int16_t)TIM3 -> CNT) * 0.1;
 
           axis_X._pid_vel._setpoint = PID_compute_pos(&axis_X._pid_pos, enc_lin_X._converted_value, dt_pos) + axis_X._target_vel;
           axis_Y._pid_vel._setpoint = PID_compute_pos(&axis_Y._pid_pos, enc_lin_Y._converted_value, dt_pos) + axis_Y._target_vel;
 
+          // Feedback packet to send to the raspi
+          static uint32_t current_msg_id = 0;
+          SPITxPacket *tx_packet = (SPITxPacket *)spi1_tx_buf;
+          
+          tx_packet -> start = 0xBB;
+          tx_packet -> msg_id = current_msg_id++;
+          tx_packet -> x = enc_lin_X._converted_value;
+          tx_packet -> y = enc_lin_Y._converted_value;
+          tx_packet -> z = enc_rot_Z._converted_value;
+
+          float ex = axis_X._target_pos - tx_packet -> x;
+          float ey = axis_Y._target_pos - tx_packet -> y;
+          float ez = axis_Z._target - tx_packet -> z;
+          tx_packet -> error = sqrtf((ex * ex) + (ey * ey) + (ez * ez));
+
+          // push in RAM
+          SCB_CleanDCache_by_Addr((uint32_t *)spi1_tx_buf, sizeof(spi1_tx_buf));
         }
 
         if(++led_counter >= 10000){
@@ -86,44 +123,45 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
 
 void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi) {
-    if (hspi->Instance == SPI1) {
-    SPIPacket *packet = (SPIPacket *)spi1_rx_buf;
+  // triggered when a full duplex communication is provided: full RX message from raspi and TX to raspi
+  if (hspi->Instance == SPI1) {
+  SPIPacket *packet = (SPIPacket *)spi1_rx_buf;
 
-    // check on cubemx, it should be a circular buffer
+  // check on cubemx, it should be a circular buffer
 
-    SCB_InvalidateDCache_by_Addr((uint32_t *)spi1_rx_buf, sizeof(spi1_rx_buf));
+  SCB_InvalidateDCache_by_Addr((uint32_t *)spi1_rx_buf, sizeof(spi1_rx_buf));
 
-    if (packet->start == 0xAA) {
+  if (packet->start == 0xAA) {
 
-      machine_state = 2;
-        
-      axis_X._target_pos = packet -> x;
-      axis_Y._target_pos = packet -> y;
-      axis_Z._target = packet -> z;
-      axis_A._target = packet -> a;
-      axis_C._target = packet -> c;
-      axis_X._target_vel = packet -> vx;
-      axis_Y._target_vel = packet -> vy;
+    machine_state = 2;
+      
+    axis_X._target_pos = packet -> x;
+    axis_Y._target_pos = packet -> y;
+    axis_Z._target = packet -> z;
+    axis_A._target = packet -> a;
+    axis_C._target = packet -> c;
+    axis_X._target_vel = packet -> vx;
+    axis_Y._target_vel = packet -> vy;
 
-    }
+  }
 
-    // homing procedure
-    if (packet -> start == 0xCC) {
+  // homing procedure
+  if (packet -> start == 0xCC) {
 
-      machine_state = 1;
-      axis_X._pid_vel._output = -5.0f;
-      axis_Y._pid_vel._output = -5.0f;
-      axis_Z._target = 0;
-      axis_A._target = 0;
-      axis_C._target = 0;
+    machine_state = 1;
+    axis_X._pid_vel._output = -5.0f;
+    axis_Y._pid_vel._output = -5.0f;
+    axis_Z._target = 0;
+    axis_A._target = 0;
+    axis_C._target = 0;
 
-      // motors command already embedded in tim6 handler. just keep a constnat pid output (pid disabled)
-    }
+    // motors command already embedded in tim6 handler. just keep a constnat pid output (pid disabled)
+  }
 
-    // 4. Gestione Cache (Cruciale su STM32H7)
-    // Poiché il DMA scrive in RAM e la CPU legge, dobbiamo invalidare la cache
-    // per forzare la CPU a leggere il dato fresco dalla RAM e non dalla cache L1
-    // SCB_InvalidateDCache_by_Addr((uint32_t *)spi_rx_buffer, sizeof(SpiPacket_t));
+  // 4. Gestione Cache (Cruciale su STM32H7)
+  // Poiché il DMA scrive in RAM e la CPU legge, dobbiamo invalidare la cache
+  // per forzare la CPU a leggere il dato fresco dalla RAM e non dalla cache L1
+  // SCB_InvalidateDCache_by_Addr((uint32_t *)spi_rx_buffer, sizeof(SpiPacket_t));
   }
 }
 

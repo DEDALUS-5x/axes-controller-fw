@@ -79,4 +79,15 @@ typedef struct __attribute__((packed)){
     uint8_t check;
 } SPIPacket;
 
+typedef struct __attribute__((packed)) {
+    uint8_t  start;
+    uint32_t msg_id;
+    float    x;
+    float    y;
+    float    z;
+    float    error;
+    uint8_t  check;
+    uint8_t  padding[8]; // reach 30 byte SPIPacket in order to get a perfect full duplex communication
+} SPITxPacket;
+
 #endif

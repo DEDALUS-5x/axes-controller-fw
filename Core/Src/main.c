@@ -60,6 +60,8 @@ uint16_t spi3_rx_buf[3] __attribute__((aligned(32)));
 uint16_t spi4_single_buf[1] __attribute__((aligned(32))); // Corrente Allegro (SPI4)
 uint8_t machine_state = 0;
 
+uint8_t spi1_tx_buf[sizeof(SPIPacket)] __attribute__((aligned(32)));
+
 // variabili di stato per la sequenza SPI4
 volatile uint8_t current_axis_idx = 0; 
 float current_values[3];
@@ -174,7 +176,7 @@ int main(void)
   axis_C._enc_rot -> _offset = 0.0f;
 
   // start dma on spi1
-  HAL_SPI_Receive_DMA(&hspi1, spi1_rx_buf, sizeof(SPIPacket)); // raspi
+  HAL_SPI_TransmitReceive_DMA(&hspi1, spi1_tx_buf, spi1_rx_buf, sizeof(SPIPacket));
   HAL_SPI_Receive_DMA(&hspi2, (uint8_t*)spi2_rx_buf, 2);
   HAL_SPI_Receive_DMA(&hspi3, (uint8_t*)spi3_rx_buf, 3);
   HAL_TIM_Base_Start_IT(&htim6);
