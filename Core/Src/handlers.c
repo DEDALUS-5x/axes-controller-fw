@@ -41,15 +41,16 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
     if (htim -> Instance == TIM6) {
         const float dt = 0.0001f;
 
-        // spi1 daisy chain + invalidare cahce
-        SCB_InvalidateDCache_by_Addr((uint32_t*)spi1_rx_buf, sizeof(spi1_rx_buf));
+        // spi2-3 daisy chain + invalidare cahce
+        SCB_InvalidateDCache_by_Addr((uint32_t*)spi2_rx_buf, sizeof(spi2_rx_buf));
+        SCB_InvalidateDCache_by_Addr((uint32_t*)spi3_rx_buf, sizeof(spi3_rx_buf));
         
         // DMA buffer: [0]=EncX, [1]=EncY, [2]=EncY2
-        update_rotary_encoder(&enc_rot_X, spi1_rx_buf[0], dt);
-        update_rotary_encoder(&enc_lin_Y, spi1_rx_buf[1], dt);
-        update_rotary_encoder(&enc_rot_Z, spi2_rx_buf[0], dt);
-        update_rotary_encoder(&enc_rot_A, spi2_rx_buf[1], dt);
-        update_rotary_encoder(&enc_rot_C, spi2_rx_buf[2], dt);
+        update_rotary_encoder(&enc_rot_X, spi2_rx_buf[0], dt);
+        update_rotary_encoder(&enc_lin_Y, spi2_rx_buf[1], dt);
+        update_rotary_encoder(&enc_rot_Z, spi3_rx_buf[0], dt);
+        update_rotary_encoder(&enc_rot_A, spi3_rx_buf[1], dt);
+        update_rotary_encoder(&enc_rot_C, spi3_rx_buf[2], dt);
 
         stepper_loop(&axis_Z, &htim8, TIM_CHANNEL_1, DIR_Z1_GPIO_Port, DIR_Z1_Pin, 30.0f, 5.0f);
         stepper_loop(&axis_A, &htim8, TIM_CHANNEL_2, DIR_P1_GPIO_Port, DIR_P1_Pin, 10.0f, 2.0f);
@@ -86,7 +87,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
 
 void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi) {
-    if (hspi->Instance == SPI4) {
+    if (hspi->Instance == SPI1) {
     SPIPacket *packet = (SPIPacket *)spi_rx_buffer;
 
     // check on cubemx, it should be a circular buffer
@@ -139,15 +140,15 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
       __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 0);
       __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
 
+      // offset rot encoder
+      enc_rot_X._offset = enc_rot_X._converted_value;
+
       // timer linear encoder X
       TIM2 -> CNT = 0; 
       enc_lin_X._converted_value = 0.0f;
       enc_rot_X._converted_value = 0.0f;
       axis_X._pid_pos._setpoint = 0.0f;
       axis_X._pid_vel._setpoint = 0.0f;
-
-      // offset rot encoder
-      enc_rot_X._offset = enc_rot_X._converted_value;
 
       PID_reset(&(axis_X._pid_pos));
       PID_reset(&(axis_X._pid_vel));
@@ -161,13 +162,13 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
       __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 0);
       __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_4, 0);
 
+      // offset rot encoder
+      enc_rot_Y._offset = enc_rot_Y._converted_value;
+
       TIM3 -> CNT = 0;
       enc_lin_Y._converted_value = 0.0f;
       axis_Y._pid_pos._setpoint = 0.0f;
       axis_Y._pid_vel._setpoint = 0.0f;
-
-      // offset rot encoder
-      enc_rot_Y._offset = enc_rot_Y._converted_value;
 
       PID_reset(&(axis_Y._pid_pos));
       PID_reset(&(axis_Y._pid_vel));

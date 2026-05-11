@@ -22,8 +22,9 @@ extern TIM_HandleTypeDef htim1;
 extern TIM_HandleTypeDef htim6;
 extern TIM_HandleTypeDef htim8;
 
-extern uint16_t spi1_rx_buf[3];
-extern uint16_t spi2_rx_buf[3];
+extern uint8_t spi1_rx_buf[sizeof(SPIPacket)]; // rasp
+extern uint16_t spi2_rx_buf[2]; // as5048a for X and Y
+extern uint16_t spi3_rx_buf[3]; // as5048a for Z A amd C 
 extern uint16_t spi4_single_buf[1];
 extern Axis axis_X, axis_Y;
 extern Stepper axis_Z, axis_A, axis_C;
