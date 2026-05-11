@@ -46,7 +46,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
         
         // DMA buffer: [0]=EncX, [1]=EncY, [2]=EncY2
         update_rotary_encoder(&enc_rot_X, spi2_rx_buf[0], dt);
-        update_rotary_encoder(&enc_lin_Y, spi2_rx_buf[1], dt);
+        update_rotary_encoder(&enc_rot_Y, spi2_rx_buf[1], dt);
         update_rotary_encoder(&enc_rot_Z, spi3_rx_buf[0], dt);
         update_rotary_encoder(&enc_rot_A, spi3_rx_buf[1], dt);
         update_rotary_encoder(&enc_rot_C, spi3_rx_buf[2], dt);
