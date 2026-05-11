@@ -22,15 +22,18 @@ void update_rotary_encoder(Encoder *enc, uint16_t raw_spi, float dt){
 
   float new_pos = (float)(raw_spi & 0x3FFF) * (360.0f / 16384.0f);
     
-  float diff = new_pos - enc->_converted_value;
-  if (diff > 180.0f) diff -= 360.0f;
-  if (diff < -180.0f) diff += 360.0f;
+  float diff = new_pos - enc->_last_raw_pos;
 
-  float instant_vel = diff / dt;
-  enc -> _velocity = (enc -> _velocity * 0.7f) + (instant_vel * 0.3f);
-  enc -> _converted_value = new_pos;
+  if (diff > 180.0f)  enc->_turns--;
+  else if (diff < -180.0f) enc->_turns++;
+  enc->_last_raw_pos = new_pos;
 
-  enc -> _converted_value = enc -> _converted_value - enc -> _offset;
+  float total_pos_deg = (enc->_turns * 360.0f) + new_pos;
+  enc->_converted_value = total_pos_deg - enc->_offset;
+
+  float instant_vel = (enc->_converted_value - enc->_last_converted_value) / dt;
+  enc->_velocity = (enc->_velocity * 0.8f) + (instant_vel * 0.2f);
+  enc->_last_converted_value = enc->_converted_value;
 }
 
 

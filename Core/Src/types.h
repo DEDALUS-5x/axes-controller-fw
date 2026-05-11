@@ -31,7 +31,10 @@ typedef struct {
     float _converted_value;
     float _velocity;
     float _offset;
-    // reference to DMA
+
+    float _last_raw_pos;
+    float _last_converted_value;
+    int32_t _turns;
 
 } Encoder;
 
