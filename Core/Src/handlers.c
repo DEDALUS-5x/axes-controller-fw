@@ -141,6 +141,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 
       // offset rot encoder
       enc_rot_X._offset = enc_rot_X._converted_value;
+      enc_rot_X._turns = 0;
 
       // timer linear encoder X
       TIM2 -> CNT = 0; 
@@ -163,6 +164,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 
       // offset rot encoder
       enc_rot_Y._offset = enc_rot_Y._converted_value;
+      enc_rot_Y._turns = 0;
 
       TIM3 -> CNT = 0;
       enc_lin_Y._converted_value = 0.0f;
@@ -178,6 +180,10 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
       homing_counter++;
 
       enc_rot_Z._offset = enc_rot_Z._converted_value;
+      enc_rot_Z._turns = 0;
+      enc_rot_Z._converted_value = 0.0f;
+
+      axis_Z._target = 0.0f;
     }
 
     if(homing_counter == 5){
