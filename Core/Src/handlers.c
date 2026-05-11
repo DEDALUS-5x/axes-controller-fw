@@ -14,7 +14,6 @@
 
 static uint8_t pid_counter = 0;
 static uint8_t led_counter = 0;
-uint8_t spi_rx_buffer[sizeof(SPIPacket)] __attribute__((aligned(32)));
 static uint8_t homing_counter = 0;
 
 
@@ -88,11 +87,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
 void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi) {
     if (hspi->Instance == SPI1) {
-    SPIPacket *packet = (SPIPacket *)spi_rx_buffer;
+    SPIPacket *packet = (SPIPacket *)spi1_rx_buf;
 
     // check on cubemx, it should be a circular buffer
 
-    SCB_InvalidateDCache_by_Addr((uint32_t *)spi_rx_buffer, sizeof(spi_rx_buffer));
+    SCB_InvalidateDCache_by_Addr((uint32_t *)spi1_rx_buf, sizeof(spi1_rx_buf));
 
     if (packet->start == 0xAA) {
 
