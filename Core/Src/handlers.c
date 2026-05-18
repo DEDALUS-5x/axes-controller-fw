@@ -61,9 +61,19 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
         update_rotary_encoder(&enc_rot_A, spi3_rx_buf[1], dt);
         update_rotary_encoder(&enc_rot_C, spi3_rx_buf[2], dt);
 
-        stepper_loop(&axis_Z, &htim8, TIM_CHANNEL_1, DIR_Z1_GPIO_Port, DIR_Z1_Pin, 30.0f, 5.0f);
-        stepper_loop(&axis_A, &htim8, TIM_CHANNEL_2, DIR_P1_GPIO_Port, DIR_P1_Pin, 10.0f, 2.0f);
-        stepper_loop(&axis_C, &htim8, TIM_CHANNEL_3, DIR_Y_GPIO_Port, DIR_Y_Pin, 10.0f, 2.0f);
+        if (machine_state == 1 || machine_state == 2) {
+            stepper_loop(&axis_Z, &htim8, TIM_CHANNEL_1, DIR_Z1_GPIO_Port, DIR_Z1_Pin, 30.0f, 5.0f);
+            stepper_loop(&axis_A, &htim8, TIM_CHANNEL_2, DIR_P1_GPIO_Port, DIR_P1_Pin, 10.0f, 2.0f);
+            stepper_loop(&axis_C, &htim8, TIM_CHANNEL_3, DIR_Y_GPIO_Port, DIR_Y_Pin, 10.0f, 2.0f);
+        } else {
+            axis_Z._target = enc_rot_Z._converted_value;
+            axis_A._target = enc_rot_A._converted_value;
+            axis_C._target = enc_rot_C._converted_value;
+            
+            __HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_1, 0);
+            __HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_2, 0);
+            __HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_3, 0);
+        }
 
         if(++pid_counter >= 10){
 
@@ -115,8 +125,18 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
           PID_compute_vel(&axis_Y, dt);
         }
 
-        motor_command(&axis_X, &htim1, TIM_CHANNEL_1, TIM_CHANNEL_2);
-        motor_command(&axis_Y, &htim1, TIM_CHANNEL_3, TIM_CHANNEL_4);
+        if(machine_state == 1 || machine_state == 2){
+
+          motor_command(&axis_X, &htim1, TIM_CHANNEL_1, TIM_CHANNEL_2);
+          motor_command(&axis_Y, &htim1, TIM_CHANNEL_3, TIM_CHANNEL_4);
+        } else{
+
+          __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 0);
+          __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
+          __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 0);
+          __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_4, 0);
+        }
+        
 
     }
 }
@@ -178,7 +198,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
       __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
 
       // offset rot encoder
-      enc_rot_X._offset = enc_rot_X._converted_value;
+      enc_rot_X._offset = (enc_rot_X._turns * 360.0f) + enc_rot_X._last_raw_pos;
       enc_rot_X._turns = 0;
 
       // timer linear encoder X
@@ -201,7 +221,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
       __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_4, 0);
 
       // offset rot encoder
-      enc_rot_Y._offset = enc_rot_Y._converted_value;
+      enc_rot_Y._offset = (enc_rot_Y._turns * 360.0f) + enc_rot_Y._last_raw_pos;
       enc_rot_Y._turns = 0;
 
       TIM3 -> CNT = 0;
@@ -217,14 +237,14 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 
       homing_counter++;
 
-      enc_rot_Z._offset = enc_rot_Z._converted_value;
+      enc_rot_Z._offset = (enc_rot_Z._turns * 360.0f) + enc_rot_Z._last_raw_pos;
       enc_rot_Z._turns = 0;
       enc_rot_Z._converted_value = 0.0f;
 
       axis_Z._target = 0.0f;
     }
 
-    if(homing_counter == 5){
+    if(homing_counter == 3){
       machine_state = 2;
     }
   }
