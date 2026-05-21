@@ -13,7 +13,7 @@
 #include <math.h>
 
 static uint8_t pid_counter = 0;
-static uint8_t led_counter = 0;
+static uint32_t led_counter = 0;
 static uint8_t homing_counter = 0;
 
 
