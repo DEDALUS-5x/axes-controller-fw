@@ -50,16 +50,16 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
         const float dt = 0.0001f;
 
-        // spi2-3 daisy chain + invalidare cahce
+        // spi1-2 daisy chain + invalidare cahce
+        SCB_InvalidateDCache_by_Addr((uint32_t*)spi1_rx_buf, sizeof(spi1_rx_buf));
         SCB_InvalidateDCache_by_Addr((uint32_t*)spi2_rx_buf, sizeof(spi2_rx_buf));
-        SCB_InvalidateDCache_by_Addr((uint32_t*)spi3_rx_buf, sizeof(spi3_rx_buf));
         
         // DMA buffer: [0]=EncX, [1]=EncY, [2]=EncY2
         update_rotary_encoder(&enc_rot_X, spi2_rx_buf[0], dt);
         update_rotary_encoder(&enc_rot_Y, spi2_rx_buf[1], dt);
-        update_rotary_encoder(&enc_rot_Z, spi3_rx_buf[0], dt);
-        update_rotary_encoder(&enc_rot_A, spi3_rx_buf[1], dt);
-        update_rotary_encoder(&enc_rot_C, spi3_rx_buf[2], dt);
+        update_rotary_encoder(&enc_rot_Z, spi1_rx_buf[0], dt);
+        update_rotary_encoder(&enc_rot_A, spi1_rx_buf[1], dt);
+        update_rotary_encoder(&enc_rot_C, spi1_rx_buf[2], dt);
 
         if (machine_state == 1 || machine_state == 2) {
             stepper_loop(&axis_Z, &htim8, TIM_CHANNEL_1, DIR_Z1_GPIO_Port, DIR_Z1_Pin, 30.0f, 5.0f);
@@ -98,7 +98,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
           // Feedback packet to send to the raspi
           static uint32_t current_msg_id = 0;
-          SPITxPacket *tx_packet = (SPITxPacket *)spi1_tx_buf;
+          SPITxPacket *tx_packet = (SPITxPacket *)spi3_tx_buf;
           
           tx_packet -> start = 0xBB;
           tx_packet -> msg_id = current_msg_id++;
@@ -111,8 +111,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
           float ez = axis_Z._target - tx_packet -> z;
           tx_packet -> error = sqrtf((ex * ex) + (ey * ey) + (ez * ez));
 
-          // push in RAM
-          SCB_CleanDCache_by_Addr((uint32_t *)spi1_tx_buf, sizeof(spi1_tx_buf));
+          SCB_CleanDCache_by_Addr((uint32_t *)spi3_tx_buf, sizeof(spi3_tx_buf));
         }
 
         if(++led_counter >= 10000){
@@ -144,39 +143,35 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
 void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi) {
   // triggered when a full duplex communication is provided: full RX message from raspi and TX to raspi
-  if (hspi->Instance == SPI1) {
-  SPIPacket *packet = (SPIPacket *)spi1_rx_buf;
+  if (hspi->Instance == SPI3) {
+    SPIPacket *packet = (SPIPacket *)spi3_rx_buf; 
 
-  // check on cubemx, it should be a circular buffer
+    // Invalida la cache per leggere i dati freschi della Raspi
+    SCB_InvalidateDCache_by_Addr((uint32_t *)spi3_rx_buf, sizeof(spi3_rx_buf));
 
-  SCB_InvalidateDCache_by_Addr((uint32_t *)spi1_rx_buf, sizeof(spi1_rx_buf));
+    if (packet->start == 0xAA) {
+      machine_state = 2;
+        
+      axis_X._target_pos = packet -> x;
+      axis_Y._target_pos = packet -> y;
+      axis_Z._target = packet -> z;
+      axis_A._target = packet -> a;
+      axis_C._target = packet -> c;
+      axis_X._target_vel = packet -> vx;
+      axis_Y._target_vel = packet -> vy;
+    }
+    // homing procedure
+    if (packet -> start == 0xCC) {
 
-  if (packet->start == 0xAA) {
+      machine_state = 1;
+      axis_X._pid_vel._output = -5.0f;
+      axis_Y._pid_vel._output = -5.0f;
+      axis_Z._target = 0;
+      axis_A._target = 0;
+      axis_C._target = 0;
 
-    machine_state = 2;
-      
-    axis_X._target_pos = packet -> x;
-    axis_Y._target_pos = packet -> y;
-    axis_Z._target = packet -> z;
-    axis_A._target = packet -> a;
-    axis_C._target = packet -> c;
-    axis_X._target_vel = packet -> vx;
-    axis_Y._target_vel = packet -> vy;
-
-  }
-
-  // homing procedure
-  if (packet -> start == 0xCC) {
-
-    machine_state = 1;
-    axis_X._pid_vel._output = -5.0f;
-    axis_Y._pid_vel._output = -5.0f;
-    axis_Z._target = 0;
-    axis_A._target = 0;
-    axis_C._target = 0;
-
-    // motors command already embedded in tim6 handler. just keep a constnat pid output (pid disabled)
-  }
+      // motors command already embedded in tim6 handler. just keep a constnat pid output (pid disabled)
+    }
 
   // 4. Gestione Cache (Cruciale su STM32H7)
   // Poiché il DMA scrive in RAM e la CPU legge, dobbiamo invalidare la cache
