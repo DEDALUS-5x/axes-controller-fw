@@ -19,10 +19,11 @@
 extern SPI_HandleTypeDef hspi1;
 extern SPI_HandleTypeDef hspi4;
 extern TIM_HandleTypeDef htim1;
+extern TIM_HandleTypeDef htim4;
 extern TIM_HandleTypeDef htim6;
 extern TIM_HandleTypeDef htim8;
 
-extern uint16_t spi1_rx_buf[3]; // Z1, A, C
+extern uint16_t spi1_rx_buf[1]; // Z1, A, C
 extern uint16_t spi2_rx_buf[2]; // X, Y
 extern uint16_t spi4_single_buf[1];
 extern Axis axis_X, axis_Y;

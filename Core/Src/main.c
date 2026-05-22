@@ -53,7 +53,14 @@
 /* USER CODE BEGIN PV */
 /* USER CODE BEGIN PV */
 
-uint16_t spi1_rx_buf[3] __attribute__((aligned(32))); // Z1, A, C
+// --- VARIABILI DI DEBUG ---
+volatile uint16_t debug_raw_spi = 0;      
+volatile uint16_t debug_angle_14b = 0;    
+volatile float debug_angle_deg = 0.0f;    
+// --------------------------
+
+uint16_t spi1_rx_buf[1] __attribute__((aligned(32))); // Z1, A, C
+uint16_t spi1_tx_buf[1] __attribute__((aligned(32))) = {0xFFFF};
 uint16_t spi2_rx_buf[2] __attribute__((aligned(32))); // X, Y
 
 uint8_t spi3_rx_buf[sizeof(SPIPacket)] __attribute__((aligned(32))); // from raspo
@@ -173,11 +180,9 @@ int main(void)
   axis_C._enc_rot = &enc_rot_C;
   axis_C._enc_rot -> _offset = 0.0f;
 
-  HAL_SPI_Receive_DMA(&hspi1, (uint8_t*)spi1_rx_buf, 3);
-  HAL_SPI_Receive_DMA(&hspi2, (uint8_t*)spi2_rx_buf, 2);
+  SCB_CleanDCache_by_Addr((uint32_t*)spi1_tx_buf, sizeof(spi1_tx_buf));
+  HAL_SPI_TransmitReceive_DMA(&hspi1, (uint8_t*)spi1_tx_buf, (uint8_t*)spi1_rx_buf, 1);  HAL_SPI_Receive_DMA(&hspi2, (uint8_t*)spi2_rx_buf, 2);
   HAL_SPI_TransmitReceive_DMA(&hspi3, spi3_tx_buf, spi3_rx_buf, sizeof(SPIPacket));
-
-  HAL_TIM_Base_Start_IT(&htim6);
 
   HAL_GPIO_TogglePin(LED_1_GPIO_Port, LED_1_Pin);
   HAL_Delay(500);
@@ -187,20 +192,23 @@ int main(void)
   HAL_Delay(500);
 
   HAL_GPIO_WritePin(EN_STEPPERS_GPIO_Port, EN_STEPPERS_Pin, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(DIR_Z1_GPIO_Port, DIR_Z1_Pin, GPIO_PIN_SET);
+
+  machine_state = 2;
+  axis_Z._target = 90.0f;
+
+  // let's start bitches
+  HAL_TIM_Base_Start_IT(&htim6);
 
   /* USER CODE END 2 */
 
-  /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    stepper_command(15.0f, &htim4, TIM_CHANNEL_4, STEP_Z1_GPIO_Port, STEP_Z1_Pin);
-    HAL_Delay(50);
-    HAL_GPIO_TogglePin(LED_2_GPIO_Port, LED_2_Pin);
+    __WFI();
+
   }
   /* USER CODE END 3 */
 }
