@@ -164,6 +164,7 @@ int main(void)
   // Z axis
   axis_Z._enc_rot = &enc_rot_Z;
   axis_Z._enc_rot -> _offset = 0.0f;
+  HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4); 
 
   // A axis
   axis_A._enc_rot = &enc_rot_A;
@@ -177,7 +178,17 @@ int main(void)
   HAL_SPI_TransmitReceive_DMA(&hspi1, spi1_tx_buf, spi1_rx_buf, sizeof(SPIPacket));
   HAL_SPI_Receive_DMA(&hspi2, (uint8_t*)spi2_rx_buf, 2);
   HAL_SPI_Receive_DMA(&hspi3, (uint8_t*)spi3_rx_buf, 3);
-  HAL_TIM_Base_Start_IT(&htim6);
+  // HAL_TIM_Base_Start_IT(&htim6);
+
+  HAL_GPIO_TogglePin(LED_1_GPIO_Port, LED_1_Pin);
+  HAL_Delay(500);
+  HAL_GPIO_TogglePin(LED_1_GPIO_Port, LED_1_Pin);
+  HAL_Delay(500);
+  HAL_GPIO_TogglePin(LED_1_GPIO_Port, LED_1_Pin);
+  HAL_Delay(500);
+
+  HAL_GPIO_WritePin(EN_STEPPERS_GPIO_Port, EN_STEPPERS_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(DIR_Z1_GPIO_Port, DIR_Z1_Pin, GPIO_PIN_SET);
 
   /* USER CODE END 2 */
 
@@ -188,6 +199,9 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    stepper_command(15.0f, &htim4, TIM_CHANNEL_4, STEP_Z1_GPIO_Port, STEP_Z1_Pin);
+    HAL_Delay(50);
+    HAL_GPIO_TogglePin(LED_2_GPIO_Port, LED_2_Pin);
   }
   /* USER CODE END 3 */
 }

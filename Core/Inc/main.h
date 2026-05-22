@@ -107,8 +107,6 @@ void Error_Handler(void);
 #define LED_1_GPIO_Port GPIOD
 #define H_PWM_Pin GPIO_PIN_14
 #define H_PWM_GPIO_Port GPIOD
-#define N_PWM_Pin GPIO_PIN_15
-#define N_PWM_GPIO_Port GPIOD
 #define ES_Z1_Pin GPIO_PIN_3
 #define ES_Z1_GPIO_Port GPIOG
 #define ES_Z2_Pin GPIO_PIN_4
@@ -137,8 +135,8 @@ void Error_Handler(void);
 #define SPI1_CSS_GPIO_Port GPIOG
 #define MX_B_Pin GPIO_PIN_3
 #define MX_B_GPIO_Port GPIOB
-#define STEP_Z1_Pin GPIO_PIN_0
-#define STEP_Z1_GPIO_Port GPIOE
+#define STEP_Z1_Pin GPIO_PIN_9
+#define STEP_Z1_GPIO_Port GPIOB
 #define DIR_Z1_Pin GPIO_PIN_1
 #define DIR_Z1_GPIO_Port GPIOE
 
