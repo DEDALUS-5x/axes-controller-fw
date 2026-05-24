@@ -131,6 +131,8 @@ void Error_Handler(void);
 #define STEP_P2_GPIO_Port GPIOD
 #define DIR_P2_Pin GPIO_PIN_4
 #define DIR_P2_GPIO_Port GPIOD
+#define SPI1_CSS_Pin GPIO_PIN_10
+#define SPI1_CSS_GPIO_Port GPIOG
 #define MX_B_Pin GPIO_PIN_3
 #define MX_B_GPIO_Port GPIOB
 #define STEP_Z1_Pin GPIO_PIN_9
