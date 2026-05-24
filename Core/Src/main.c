@@ -59,14 +59,14 @@ volatile uint16_t debug_angle_14b = 0;
 volatile float debug_angle_deg = 0.0f;    
 // --------------------------
 
-uint16_t spi1_rx_buf[1] __attribute__((aligned(32))); // Z1, A, C
-uint16_t spi1_tx_buf[1] __attribute__((aligned(32))) = {0xFFFF};
-uint16_t spi2_rx_buf[2] __attribute__((aligned(32))); // X, Y
+uint16_t spi1_rx_buf[16] __attribute__((aligned(32))); // Z1, A, C
+uint16_t spi1_tx_buf[16] __attribute__((aligned(32))) = {0xFFFF};
+uint16_t spi2_rx_buf[16] __attribute__((aligned(32))); // X, Y
 
 uint8_t spi3_rx_buf[sizeof(SPIPacket)] __attribute__((aligned(32))); // from raspo
 uint8_t spi3_tx_buf[sizeof(SPITxPacket)] __attribute__((aligned(32))); // to raspi
 
-uint16_t spi4_single_buf[1] __attribute__((aligned(32)));
+uint16_t spi4_single_buf[16] __attribute__((aligned(32)));
 uint8_t machine_state = 0;
 
 volatile uint8_t current_axis_idx = 0; 
@@ -176,12 +176,27 @@ int main(void)
   axis_A._enc_rot = &enc_rot_A;
   axis_A._enc_rot -> _offset = 0.0f;
 
-  // X axis
+  // C axis
   axis_C._enc_rot = &enc_rot_C;
   axis_C._enc_rot -> _offset = 0.0f;
 
+  uint16_t cmd_clear = 0xC001;
+  uint16_t dummy = 0;
+
+  // set hspi1 commmunication with user driven CSS
+  HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_RESET);
+  HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)&cmd_clear, (uint8_t*)&dummy, 1, 10);
+  HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_SET);
+  HAL_Delay(2);
+  uint16_t cmd_nop = 0x0000;
+  HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_RESET);
+  HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)&cmd_nop, (uint8_t*)&dummy, 1, 10);
+  HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_SET);
+  HAL_Delay(2);
+  spi1_tx_buf[0] = 0xFFFF;
   SCB_CleanDCache_by_Addr((uint32_t*)spi1_tx_buf, sizeof(spi1_tx_buf));
-  HAL_SPI_TransmitReceive_DMA(&hspi1, (uint8_t*)spi1_tx_buf, (uint8_t*)spi1_rx_buf, 1);  HAL_SPI_Receive_DMA(&hspi2, (uint8_t*)spi2_rx_buf, 2);
+  
+  HAL_SPI_Receive_DMA(&hspi2, (uint8_t*)spi2_rx_buf, 2);
   HAL_SPI_TransmitReceive_DMA(&hspi3, spi3_tx_buf, spi3_rx_buf, sizeof(SPIPacket));
 
   HAL_GPIO_TogglePin(LED_1_GPIO_Port, LED_1_Pin);

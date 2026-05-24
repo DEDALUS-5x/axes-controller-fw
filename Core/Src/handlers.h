@@ -25,9 +25,10 @@ extern TIM_HandleTypeDef htim4;
 extern TIM_HandleTypeDef htim6;
 extern TIM_HandleTypeDef htim8;
 
-extern uint16_t spi1_rx_buf[1]; // Z1, A, C
-extern uint16_t spi2_rx_buf[2]; // X, Y
-extern uint16_t spi4_single_buf[1];
+extern uint16_t spi1_rx_buf[16]; // Z1, A, C
+extern uint16_t spi1_tx_buf[16];
+extern uint16_t spi2_rx_buf[16]; // X, Y
+extern uint16_t spi4_single_buf[16];
 extern Axis axis_X, axis_Y;
 extern Stepper axis_Z, axis_A, axis_C;
 extern float current_values[3];

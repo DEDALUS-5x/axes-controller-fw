@@ -51,13 +51,14 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
         const float dt = 0.0001f;
 
         // spi1-2 daisy chain + invalidare cahce
-        SCB_InvalidateDCache_by_Addr((uint32_t*)spi1_rx_buf, sizeof(spi1_rx_buf));
+        HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_RESET);
+        HAL_SPI_TransmitReceive_DMA(&hspi1, (uint8_t*)spi1_tx_buf, (uint8_t*)spi1_rx_buf, 1);
         SCB_InvalidateDCache_by_Addr((uint32_t*)spi2_rx_buf, sizeof(spi2_rx_buf));
         
         // DMA buffer: [0]=EncX, [1]=EncY, [2]=EncY2
         update_rotary_encoder(&enc_rot_X, spi2_rx_buf[0], dt);
         update_rotary_encoder(&enc_rot_Y, spi2_rx_buf[1], dt);
-        update_rotary_encoder(&enc_rot_Z, spi1_rx_buf[0], dt);
+        // update_rotary_encoder(&enc_rot_Z, spi1_rx_buf[0], dt);
         // update_rotary_encoder(&enc_rot_A, spi1_rx_buf[1], dt);
         // update_rotary_encoder(&enc_rot_C, spi1_rx_buf[2], dt);
 
@@ -161,8 +162,16 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
 
 void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi) {
+
+  if (hspi -> Instance == SPI1){
+
+    HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_SET);
+    SCB_InvalidateDCache_by_Addr((uint32_t *)spi1_rx_buf, sizeof(spi1_rx_buf));
+    update_rotary_encoder(&enc_rot_Z, spi1_rx_buf[0], 0.0001f);
+  }
+
   // triggered when a full duplex communication is provided: full RX message from raspi and TX to raspi
-  if (hspi->Instance == SPI3) {
+  else if (hspi -> Instance == SPI3) {
     SPIPacket *packet = (SPIPacket *)spi3_rx_buf; 
 
     // Invalida la cache per leggere i dati freschi della Raspi
