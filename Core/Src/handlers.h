@@ -16,6 +16,8 @@
 #include "types.h"
 #include "ctrl.h"
 
+#define TIM6_FREQ 10000.0
+
 extern SPI_HandleTypeDef hspi1;
 extern SPI_HandleTypeDef hspi4;
 extern TIM_HandleTypeDef htim1;

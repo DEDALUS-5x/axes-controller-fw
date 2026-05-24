@@ -167,3 +167,19 @@ void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, G
 
   stepper_command(required_speed, htim, channel, dir_port, dir_pin);
 }
+
+void stepper_loop_soft(Stepper *stepper, GPIO_TypeDef *dir_port, uint16_t dir_pin, float max_speed, float kp) {
+    float current_pos = stepper->_enc_rot->_converted_value;
+    float error = stepper->_target - current_pos;
+    float required_speed = error * kp;
+    
+    if (required_speed > max_speed) required_speed = max_speed;
+    if (required_speed < -max_speed) required_speed = -max_speed;
+    float tolerance = 0.01f; 
+    if (fabsf(error) < tolerance) {
+        required_speed = 0.0f;
+    }
+
+    HAL_GPIO_WritePin(dir_port, dir_pin, (required_speed >= 0.0f) ? GPIO_PIN_SET : GPIO_PIN_RESET); // direction
+    stepper->_current_speed_hz = fabsf(required_speed) * STEPS_MM;
+}
