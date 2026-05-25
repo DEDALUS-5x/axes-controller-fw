@@ -114,7 +114,7 @@ void stepper_command(float speed, TIM_HandleTypeDef *htim, uint32_t channel, GPI
 
     float freq = fabsf(speed) * STEPS_MM;
 
-    if (freq < 10.0f) {
+    if (freq < 0.5f) {
         __HAL_TIM_SET_COMPARE(htim, channel, 0); 
         return;
     }
