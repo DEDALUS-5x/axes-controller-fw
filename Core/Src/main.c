@@ -176,10 +176,12 @@ int main(void)
   // A axis
   axis_A._enc_rot = &enc_rot_A;
   axis_A._enc_rot -> _offset = 0.0f;
+  HAL_TIM_PWM_Start(&htim15, TIM_CHANNEL_1);
 
   // C axis
   axis_C._enc_rot = &enc_rot_C;
   axis_C._enc_rot -> _offset = 0.0f;
+  HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_2);
 
   uint16_t cmd_clear = 0x4001; // error clear command
   uint16_t cmd_read  = 0xFFFF; // reading command
@@ -212,6 +214,8 @@ int main(void)
 
   machine_state = 2;
   axis_Z._target = 400.0f;
+  axis_A._target = 200.0f;
+  axis_C._target = 300.0f;
 
   // let's start bitches
   HAL_TIM_Base_Start_IT(&htim6);

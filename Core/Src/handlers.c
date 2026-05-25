@@ -72,7 +72,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
         update_rotary_encoder(&enc_rot_Y, spi2_rx_buf[1], dt);
 
         if (machine_state == 1 || machine_state == 2) {
-            stepper_loop(&axis_Z, &htim4, TIM_CHANNEL_4, DIR_Z1_GPIO_Port, DIR_Z1_Pin, 30.0f, 5.0f);
+            stepper_loop(&axis_Z, &htim4, TIM_CHANNEL_4, DIR_Z1_GPIO_Port, DIR_Z1_Pin, 20.0f, 5.0f);
+            stepper_loop(&axis_A, &htim15, TIM_CHANNEL_1, DIR_P1_GPIO_Port, DIR_P1_Pin, 20.0, 5.0f);
+            stepper_loop(&axis_C, &htim8, TIM_CHANNEL_2, DIR_Y_GPIO_Port, DIR_Y_Pin, 20.0, 5.0f);
 
         } else {
             axis_Z._target = enc_rot_Z._converted_value;

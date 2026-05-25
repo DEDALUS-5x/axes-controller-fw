@@ -24,6 +24,7 @@ extern TIM_HandleTypeDef htim1;
 extern TIM_HandleTypeDef htim4;
 extern TIM_HandleTypeDef htim6;
 extern TIM_HandleTypeDef htim8;
+extern TIM_HandleTypeDef htim15;
 
 extern uint16_t spi1_rx_buf[16]; // Z1, A, C
 extern uint16_t spi1_tx_buf[16];
