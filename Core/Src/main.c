@@ -59,14 +59,14 @@ volatile uint16_t debug_angle_14b = 0;
 volatile float debug_angle_deg = 0.0f;    
 // --------------------------
 
-uint16_t spi1_rx_buf[16] __attribute__((aligned(32))); // Z1, A, C
-uint16_t spi1_tx_buf[16] __attribute__((aligned(32))) = {0xFFFF};
-uint16_t spi2_rx_buf[16] __attribute__((aligned(32))); // X, Y
+uint16_t spi1_rx_buf[16] __attribute__((section(".dma_buffer"), aligned(32))); // Z1, A, C
+uint16_t spi1_tx_buf[16] __attribute__((section(".dma_buffer"), aligned(32)));
+uint16_t spi2_rx_buf[16] __attribute__((section(".dma_buffer"), aligned(32))); // X, Y
 
-uint8_t spi3_rx_buf[sizeof(SPIPacket)] __attribute__((aligned(32))); // from raspo
-uint8_t spi3_tx_buf[sizeof(SPITxPacket)] __attribute__((aligned(32))); // to raspi
+uint8_t spi3_rx_buf[sizeof(SPIPacket)] __attribute__((section(".dma_buffer"), aligned(32))); // from raspo
+uint8_t spi3_tx_buf[sizeof(SPITxPacket)] __attribute__((section(".dma_buffer"), aligned(32))); // to raspi
 
-uint16_t spi4_single_buf[16] __attribute__((aligned(32)));
+uint16_t spi4_single_buf[16] __attribute__((section(".dma_buffer"), aligned(32)));
 uint8_t machine_state = 0;
 
 volatile uint8_t current_axis_idx = 0; 
@@ -143,6 +143,7 @@ int main(void)
   MX_ADC1_Init();
   MX_TIM4_Init();
   MX_TIM6_Init();
+  MX_TIM15_Init();
   /* USER CODE BEGIN 2 */
 
   // x axis
@@ -180,7 +181,24 @@ int main(void)
   axis_C._enc_rot = &enc_rot_C;
   axis_C._enc_rot -> _offset = 0.0f;
 
-  uint16_t cmd_clear = 0xC001;
+  uint16_t cmd_clear = 0x4001; // Comando per pulire l'errore
+  uint16_t cmd_read  = 0xFFFF; // Comando per leggere l'angolo
+  uint16_t dummy = 0;
+
+  // 1. Invia il comando di pulizia
+  HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_RESET);
+  HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)&cmd_clear, (uint8_t*)&dummy, 1, 100);
+  HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_SET);
+  HAL_Delay(2);
+  
+  // 2. Invia un comando a vuoto (per estrarre la risposta di pulizia dal chip)
+  HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_RESET);
+  HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)&cmd_read, (uint8_t*)&dummy, 1, 100);
+  HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_SET);
+  HAL_Delay(2);
+
+  /*
+  uint16_t cmd_clear = 0x4001;
   uint16_t dummy = 0;
 
   // set hspi1 commmunication with user driven CSS
@@ -193,6 +211,7 @@ int main(void)
   HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)&cmd_nop, (uint8_t*)&dummy, 1, 10);
   HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_SET);
   HAL_Delay(2);
+  */
   spi1_tx_buf[0] = 0xFFFF;
   SCB_CleanDCache_by_Addr((uint32_t*)spi1_tx_buf, sizeof(spi1_tx_buf));
   
@@ -209,7 +228,7 @@ int main(void)
   HAL_GPIO_WritePin(EN_STEPPERS_GPIO_Port, EN_STEPPERS_Pin, GPIO_PIN_RESET);
 
   machine_state = 2;
-  axis_Z._target = 90.0f;
+  axis_Z._target = 400.0f;
 
   // let's start bitches
   HAL_TIM_Base_Start_IT(&htim6);

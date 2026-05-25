@@ -54,8 +54,8 @@ void MX_GPIO_Init(void)
   __HAL_RCC_GPIOG_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOE, EN_STEPPERS_Pin|STEP_Z2_Pin|DIR_Z2_Pin|DIR_F_Pin
-                          |STEP_F_Pin|DIR_Z1_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOE, EN_STEPPERS_Pin|DIR_Z2_Pin|DIR_F_Pin|STEP_F_Pin
+                          |DIR_Z1_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOC, SPI4_CSS_X_Pin|SPI4_CSS_Y1_Pin|SPI4_CSS_Y2_Pin|SPI2_CSS_Pin, GPIO_PIN_RESET);
@@ -65,15 +65,15 @@ void MX_GPIO_Init(void)
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOD, DIR_Y_Pin|STEP_Y_Pin|LED_2_Pin|LED_1_Pin
-                          |STEP_P1_Pin|DIR_P1_Pin|STEP_P2_Pin|DIR_P2_Pin, GPIO_PIN_RESET);
+                          |DIR_P1_Pin|DIR_P2_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_SET);
 
-  /*Configure GPIO pins : EN_STEPPERS_Pin STEP_Z2_Pin DIR_Z2_Pin DIR_F_Pin
-                           STEP_F_Pin DIR_Z1_Pin */
-  GPIO_InitStruct.Pin = EN_STEPPERS_Pin|STEP_Z2_Pin|DIR_Z2_Pin|DIR_F_Pin
-                          |STEP_F_Pin|DIR_Z1_Pin;
+  /*Configure GPIO pins : EN_STEPPERS_Pin DIR_Z2_Pin DIR_F_Pin STEP_F_Pin
+                           DIR_Z1_Pin */
+  GPIO_InitStruct.Pin = EN_STEPPERS_Pin|DIR_Z2_Pin|DIR_F_Pin|STEP_F_Pin
+                          |DIR_Z1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -94,9 +94,9 @@ void MX_GPIO_Init(void)
   HAL_GPIO_Init(SPI3_CSS_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : DIR_Y_Pin STEP_Y_Pin LED_2_Pin LED_1_Pin
-                           STEP_P1_Pin DIR_P1_Pin STEP_P2_Pin DIR_P2_Pin */
+                           DIR_P1_Pin DIR_P2_Pin */
   GPIO_InitStruct.Pin = DIR_Y_Pin|STEP_Y_Pin|LED_2_Pin|LED_1_Pin
-                          |STEP_P1_Pin|DIR_P1_Pin|STEP_P2_Pin|DIR_P2_Pin;
+                          |DIR_P1_Pin|DIR_P2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;

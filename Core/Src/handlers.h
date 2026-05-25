@@ -51,6 +51,6 @@ extern uint8_t spi3_tx_buf[sizeof(SPITxPacket)];
 
 void update_rotary_encoder(Encoder *enc, uint16_t raw_spi, float dt);
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim);
-void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi);
+void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi);
 
 #endif

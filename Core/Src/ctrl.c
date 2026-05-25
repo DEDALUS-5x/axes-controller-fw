@@ -110,11 +110,11 @@ void motor_command(Axis *axis, TIM_HandleTypeDef *htim, uint32_t channel1, uint3
 
 void stepper_command(float speed, TIM_HandleTypeDef *htim, uint32_t channel, GPIO_TypeDef *dir_port, uint16_t dir_pin) {
     
-    HAL_GPIO_WritePin(dir_port, dir_pin, (speed >= 0.0f) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(dir_port, dir_pin, (speed >= 0.0f) ? GPIO_PIN_RESET : GPIO_PIN_SET);
 
     float freq = fabsf(speed) * STEPS_MM;
 
-    if (freq < 1.0f) {
+    if (freq < 10.0f) {
         __HAL_TIM_SET_COMPARE(htim, channel, 0); 
         return;
     }
@@ -143,6 +143,11 @@ void stepper_command(float speed, TIM_HandleTypeDef *htim, uint32_t channel, GPI
     __HAL_TIM_SET_AUTORELOAD(htim, arr_val);
     __HAL_TIM_SET_COMPARE(htim, channel, arr_val / 2); // Duty cycle al 50% 
 
+    // check anti glitch
+    if (htim->Instance->CNT > arr_val) {
+        htim->Instance->CNT = 0;
+    }
+
     if (!(htim->Instance->CR1 & TIM_CR1_CEN)) {
         HAL_TIM_PWM_Start(htim, channel);
     }
@@ -160,9 +165,12 @@ void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, G
   if (required_speed > max_speed) required_speed = max_speed;
   if (required_speed < -max_speed) required_speed = -max_speed;
 
-  float tolerance = 0.01f; 
+  float tolerance = (stepper->_current_speed_hz == 0.0f) ? 0.6f : 0.15f; 
+  
   if (fabsf(error) < tolerance) {
-      required_speed = 0.0f;
+      stepper_command(0.0f, htim, channel, dir_port, dir_pin);
+      stepper->_current_speed_hz = 0.0f; // Registriamo lo stato: FERMO
+      return; 
   }
 
   stepper_command(required_speed, htim, channel, dir_port, dir_pin);

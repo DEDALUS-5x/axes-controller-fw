@@ -51,8 +51,24 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
         const float dt = 0.0001f;
 
         // spi1-2 daisy chain + invalidare cahce
+        __HAL_SPI_CLEAR_OVRFLAG(&hspi1);
         HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_RESET);
-        HAL_SPI_TransmitReceive_DMA(&hspi1, (uint8_t*)spi1_tx_buf, (uint8_t*)spi1_rx_buf, 1);
+
+        if (hspi1.State != HAL_SPI_STATE_READY) {
+            HAL_SPI_Abort(&hspi1); 
+        }
+
+        HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_SET);
+        
+        for(volatile int i=0; i<15; i++); 
+
+        __HAL_SPI_CLEAR_OVRFLAG(&hspi1);
+        HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_RESET);
+        
+        if (HAL_SPI_TransmitReceive_DMA(&hspi1, (uint8_t*)spi1_tx_buf, (uint8_t*)spi1_rx_buf, 1) != HAL_OK) {
+            HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_SET);
+        }
+
         SCB_InvalidateDCache_by_Addr((uint32_t*)spi2_rx_buf, sizeof(spi2_rx_buf));
         
         // DMA buffer: [0]=EncX, [1]=EncY, [2]=EncY2
@@ -64,35 +80,13 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
         if (machine_state == 1 || machine_state == 2) {
             stepper_loop(&axis_Z, &htim4, TIM_CHANNEL_4, DIR_Z1_GPIO_Port, DIR_Z1_Pin, 30.0f, 5.0f);
-            stepper_loop_soft(&axis_A, DIR_P1_GPIO_Port, DIR_P1_Pin, 10.0f, 2.0f);
-            stepper_loop_soft(&axis_C, DIR_Y_GPIO_Port, DIR_Y_Pin, 10.0f, 2.0f);
-            // stepper_loop(&axis_A, &htim8, TIM_CHANNEL_2, DIR_P1_GPIO_Port, DIR_P1_Pin, 10.0f, 2.0f);
-            // stepper_loop(&axis_C, &htim8, TIM_CHANNEL_3, DIR_Y_GPIO_Port, DIR_Y_Pin, 10.0f, 2.0f);
+
         } else {
             axis_Z._target = enc_rot_Z._converted_value;
-            axis_A._target = enc_rot_A._converted_value;
-            axis_C._target = enc_rot_C._converted_value;
             
             __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_4, 0);
             axis_A._current_speed_hz = 0.0f;
             axis_C._current_speed_hz = 0.0f;
-        }
-
-        // pulses for steppers
-        axis_A._accumulator += axis_A._current_speed_hz;
-        if (axis_A._accumulator >= TIM6_FREQ) {
-            HAL_GPIO_WritePin(STEP_P1_GPIO_Port, STEP_P1_Pin, GPIO_PIN_SET);
-            axis_A._accumulator -= TIM6_FREQ; 
-        } else {
-            HAL_GPIO_WritePin(STEP_P1_GPIO_Port, STEP_P1_Pin, GPIO_PIN_RESET);
-        }
-
-        axis_C._accumulator += axis_C._current_speed_hz;
-        if (axis_C._accumulator >= TIM6_FREQ) {
-            HAL_GPIO_WritePin(STEP_Y_GPIO_Port, STEP_Y_Pin, GPIO_PIN_SET);
-            axis_C._accumulator -= TIM6_FREQ;
-        } else {
-            HAL_GPIO_WritePin(STEP_Y_GPIO_Port, STEP_Y_Pin, GPIO_PIN_RESET);
         }
 
         if(++pid_counter >= 10){
@@ -161,7 +155,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 }
 
 
-void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi) {
+void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
 
   if (hspi -> Instance == SPI1){
 

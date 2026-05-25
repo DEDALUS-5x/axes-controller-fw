@@ -59,8 +59,6 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define EN_STEPPERS_Pin GPIO_PIN_2
 #define EN_STEPPERS_GPIO_Port GPIOE
-#define STEP_Z2_Pin GPIO_PIN_3
-#define STEP_Z2_GPIO_Port GPIOE
 #define DIR_Z2_Pin GPIO_PIN_4
 #define DIR_Z2_GPIO_Port GPIOE
 #define SPI4_CSS_X_Pin GPIO_PIN_13
@@ -123,12 +121,10 @@ void Error_Handler(void);
 #define MY2_IN2_GPIO_Port GPIOC
 #define MX_A_Pin GPIO_PIN_15
 #define MX_A_GPIO_Port GPIOA
-#define STEP_P1_Pin GPIO_PIN_0
-#define STEP_P1_GPIO_Port GPIOD
+#define STEP_P1_Pin GPIO_PIN_12
+#define STEP_P1_GPIO_Port GPIOC
 #define DIR_P1_Pin GPIO_PIN_1
 #define DIR_P1_GPIO_Port GPIOD
-#define STEP_P2_Pin GPIO_PIN_3
-#define STEP_P2_GPIO_Port GPIOD
 #define DIR_P2_Pin GPIO_PIN_4
 #define DIR_P2_GPIO_Port GPIOD
 #define SPI1_CSS_Pin GPIO_PIN_10
