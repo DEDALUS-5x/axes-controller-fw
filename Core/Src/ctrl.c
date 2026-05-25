@@ -165,11 +165,11 @@ void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, G
   if (required_speed > max_speed) required_speed = max_speed;
   if (required_speed < -max_speed) required_speed = -max_speed;
 
+  // tolerance as function of the speed in order to avoid vibrations
   float tolerance = (stepper->_current_speed_hz == 0.0f) ? 0.6f : 0.15f; 
-  
   if (fabsf(error) < tolerance) {
       stepper_command(0.0f, htim, channel, dir_port, dir_pin);
-      stepper->_current_speed_hz = 0.0f; // Registriamo lo stato: FERMO
+      stepper->_current_speed_hz = 0.0f; // stop
       return; 
   }
 
