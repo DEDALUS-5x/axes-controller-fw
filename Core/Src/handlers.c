@@ -50,21 +50,17 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
         const float dt = 0.0001f;
 
-        // spi1-2 daisy chain + invalidare cahce
+        // SPI 1 and 2 interrogation
         __HAL_SPI_CLEAR_OVRFLAG(&hspi1);
         HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_RESET);
 
         if (hspi1.State != HAL_SPI_STATE_READY) {
             HAL_SPI_Abort(&hspi1); 
         }
-
         HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_SET);
-        
         for(volatile int i=0; i<15; i++); 
-
         __HAL_SPI_CLEAR_OVRFLAG(&hspi1);
         HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_RESET);
-        
         if (HAL_SPI_TransmitReceive_DMA(&hspi1, (uint8_t*)spi1_tx_buf, (uint8_t*)spi1_rx_buf, 1) != HAL_OK) {
             HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_SET);
         }
@@ -74,9 +70,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
         // DMA buffer: [0]=EncX, [1]=EncY, [2]=EncY2
         update_rotary_encoder(&enc_rot_X, spi2_rx_buf[0], dt);
         update_rotary_encoder(&enc_rot_Y, spi2_rx_buf[1], dt);
-        // update_rotary_encoder(&enc_rot_Z, spi1_rx_buf[0], dt);
-        // update_rotary_encoder(&enc_rot_A, spi1_rx_buf[1], dt);
-        // update_rotary_encoder(&enc_rot_C, spi1_rx_buf[2], dt);
 
         if (machine_state == 1 || machine_state == 2) {
             stepper_loop(&axis_Z, &htim4, TIM_CHANNEL_4, DIR_Z1_GPIO_Port, DIR_Z1_Pin, 30.0f, 5.0f);
@@ -162,6 +155,9 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
     HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_SET);
     SCB_InvalidateDCache_by_Addr((uint32_t *)spi1_rx_buf, sizeof(spi1_rx_buf));
     update_rotary_encoder(&enc_rot_Z, spi1_rx_buf[0], 0.0001f);
+    update_rotary_encoder(&enc_rot_A, spi1_rx_buf[1], 0.0001f);
+    update_rotary_encoder(&enc_rot_C, spi1_rx_buf[2], 0.0001f);
+    
   }
 
   // triggered when a full duplex communication is provided: full RX message from raspi and TX to raspi
@@ -195,10 +191,6 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
       // motors command already embedded in tim6 handler. just keep a constnat pid output (pid disabled)
     }
 
-  // 4. Gestione Cache (Cruciale su STM32H7)
-  // Poiché il DMA scrive in RAM e la CPU legge, dobbiamo invalidare la cache
-  // per forzare la CPU a leggere il dato fresco dalla RAM e non dalla cache L1
-  // SCB_InvalidateDCache_by_Addr((uint32_t *)spi_rx_buffer, sizeof(SpiPacket_t));
   }
 }
 
@@ -278,41 +270,3 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
   }
 
 }
-
-
-/*
-void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi) {
-
-  // gestione raspi, ricordati di scomporre il feedrate su X e Y --> oppure fattelo dare dalla raspi già scomposto
-
-  if (hspi->Instance == SPI4) {
-
-    SCB_InvalidateDCache_by_Addr((uint32_t*)spi4_single_buf, sizeof(spi4_single_buf));
-      
-    current_values[current_axis_idx] = (float)spi4_single_buf[0] * (5.0f / 4096.0f);
-
-    // CS high of the read one
-    if (current_axis_idx == 0) HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
-
-    else if (current_axis_idx == 1) HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14, GPIO_PIN_SET);
-
-    else if (current_axis_idx == 2) HAL_GPIO_WritePin(GPIOC, GPIO_PIN_15, GPIO_PIN_SET);
-
-    current_values[current_axis_idx] = (float)spi4_single_buf[0] * (5.0f / 4096.0f);
-
-    current_axis_idx++;
-
-    // next CS
-    if (current_axis_idx == 1) {
-
-      HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14, GPIO_PIN_RESET); // y
-      HAL_SPI_Receive_DMA(&hspi4, (uint8_t*)spi4_single_buf, 1);
-    } else if (current_axis_idx == 2) {
-
-      HAL_GPIO_WritePin(GPIOC, GPIO_PIN_15, GPIO_PIN_RESET); // y2
-      HAL_SPI_Receive_DMA(&hspi4, (uint8_t*)spi4_single_buf, 1);
-    }
-  }
-
-  
-}*/

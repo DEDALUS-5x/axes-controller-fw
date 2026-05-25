@@ -37,7 +37,6 @@ extern volatile uint8_t current_axis_idx;
 extern Encoder enc_rot_X, enc_rot_Y, enc_rot_Z, enc_rot_A, enc_rot_C;
 extern Encoder enc_lin_X, enc_lin_Y;
 
-extern uint8_t machine_state;
 /*
 MACHINE STATE
 - 0: init
@@ -45,6 +44,7 @@ MACHINE STATE
 - 2: run
 - 3: error
 */
+extern uint8_t machine_state;
 
 extern uint8_t spi3_rx_buf[sizeof(SPIPacket)];
 extern uint8_t spi3_tx_buf[sizeof(SPITxPacket)];

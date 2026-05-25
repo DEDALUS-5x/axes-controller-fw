@@ -181,37 +181,20 @@ int main(void)
   axis_C._enc_rot = &enc_rot_C;
   axis_C._enc_rot -> _offset = 0.0f;
 
-  uint16_t cmd_clear = 0x4001; // Comando per pulire l'errore
-  uint16_t cmd_read  = 0xFFFF; // Comando per leggere l'angolo
+  uint16_t cmd_clear = 0x4001; // error clear command
+  uint16_t cmd_read  = 0xFFFF; // reading command
   uint16_t dummy = 0;
 
-  // 1. Invia il comando di pulizia
+  // clean encoders transmissioin
   HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_RESET);
   HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)&cmd_clear, (uint8_t*)&dummy, 1, 100);
   HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_SET);
   HAL_Delay(2);
-  
-  // 2. Invia un comando a vuoto (per estrarre la risposta di pulizia dal chip)
   HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_RESET);
   HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)&cmd_read, (uint8_t*)&dummy, 1, 100);
   HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_SET);
   HAL_Delay(2);
 
-  /*
-  uint16_t cmd_clear = 0x4001;
-  uint16_t dummy = 0;
-
-  // set hspi1 commmunication with user driven CSS
-  HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_RESET);
-  HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)&cmd_clear, (uint8_t*)&dummy, 1, 10);
-  HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_SET);
-  HAL_Delay(2);
-  uint16_t cmd_nop = 0x0000;
-  HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_RESET);
-  HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)&cmd_nop, (uint8_t*)&dummy, 1, 10);
-  HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_SET);
-  HAL_Delay(2);
-  */
   spi1_tx_buf[0] = 0xFFFF;
   SCB_CleanDCache_by_Addr((uint32_t*)spi1_tx_buf, sizeof(spi1_tx_buf));
   
