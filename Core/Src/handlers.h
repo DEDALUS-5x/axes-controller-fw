@@ -50,8 +50,28 @@ extern uint8_t machine_state;
 extern uint8_t spi3_rx_buf[sizeof(SPIPacket)];
 extern uint8_t spi3_tx_buf[sizeof(SPITxPacket)];
 
+/**
+ * 
+ * @brief Function that takes the raw AS5048a data, directly from the SPI and convert it to the effective angular position of the stepper motor
+ * @param enc Pointer to `Encoder` instance
+ * @param raw_spi raw data coming from the SPI DMA buffer
+ * @param dt time interval
+ * 
+ */
 void update_rotary_encoder(Encoder *enc, uint16_t raw_spi, float dt);
+
+/**
+ * 
+ * @brief Handler of the real-time timer. It is called as interrupt handler of the same timer and it runs the board operations at the timer frequency
+ * @param htim Timer instance, in this case `TIM6`. It runs at 10kHz, so this function is called at the same frequency. PIDs and DMAs request are called at the same freq, but the linear encoders PID is called at 1kHz
+ */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim);
+
+/**
+ * 
+ * @brief Handler of the SPI communication. It is called whenever a full-duplex communication is performed
+ * @param hspi SPI instance. SPI1 and SPI2 are devoted to AS5048a acquisitino, while SPI3 is devoted to raspberry communication
+ */
 void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi);
 
 #endif
