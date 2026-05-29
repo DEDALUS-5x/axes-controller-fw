@@ -250,6 +250,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 
       homing_counter++;
 
+      __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_4, 0);
+
       enc_rot_Z._offset = (enc_rot_Z._turns * 360.0f) + enc_rot_Z._last_raw_pos;
       enc_rot_Z._turns = 0;
       enc_rot_Z._converted_value = 0.0f;
@@ -269,6 +271,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
     __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
     __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 0);
     __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_4, 0);
+    __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_4, 0);
+    __HAL_TIM_SET_COMPARE(&htim15, TIM_CHANNEL_1, 0);
+    __HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_2, 0);
 
     while(1); // required power cycle. The endstop interrupts have the higher priority
   }
