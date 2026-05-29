@@ -36,6 +36,15 @@ void update_rotary_encoder(Encoder *enc, uint16_t raw_spi, float dt){
 }
 
 
+/*
+  ____            _   _____ _                
+ |  _ \ ___  __ _| | |_   _(_)_ __ ___   ___ 
+ | |_) / _ \/ _` | |   | | | | '_ ` _ \ / _ \
+ |  _ <  __/ (_| | |   | | | | | | | | |  __/
+ |_| \_\___|\__,_|_|   |_| |_|_| |_| |_|\___|
+                                          
+*/
+
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
     if (htim -> Instance == TIM6) {
 
@@ -152,6 +161,15 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 }
 
 
+/*
+  ____  ____ ___ 
+ / ___||  _ \_ _|
+ \___ \| |_) | | 
+  ___) |  __/| | 
+ |____/|_|  |___|
+                 
+*/
+
 void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
 
   if (hspi -> Instance == SPI1){
@@ -197,6 +215,15 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
 
   }
 }
+
+/*
+  _____           _   ____  _                  
+ | ____|_ __   __| | / ___|| |_ ___  _ __  ___ 
+ |  _| | '_ \ / _` | \___ \| __/ _ \| '_ \/ __|
+ | |___| | | | (_| |  ___) | || (_) | |_) \__ \
+ |_____|_| |_|\__,_| |____/ \__\___/| .__/|___/
+                                    |_|        
+*/
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 
