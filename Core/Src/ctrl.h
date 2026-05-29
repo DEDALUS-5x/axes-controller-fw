@@ -30,6 +30,4 @@ void stepper_command(float speed, TIM_HandleTypeDef *htim, uint32_t channel, GPI
 
 void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, GPIO_TypeDef *dir_port, uint16_t dir_pin, float max_speed, float kp);
 
-void stepper_loop_soft(Stepper *stepper, GPIO_TypeDef *dir_port, uint16_t dir_pin, float max_speed, float kp);
-
 #endif
