@@ -114,6 +114,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
           tx_packet -> x = enc_lin_X._converted_value;
           tx_packet -> y = enc_lin_Y._converted_value;
           tx_packet -> z = enc_rot_Z._converted_value;
+          tx_packet -> a = enc_rot_A._converted_value;
+          tx_packet -> c = enc_rot_C._converted_value;
 
           float ex = axis_X._target_pos - tx_packet -> x;
           float ey = axis_Y._target_pos - tx_packet -> y;
