@@ -116,7 +116,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
           // Feedback packet to send to the raspi
           static uint32_t current_msg_id = 0;
-          SPITxPacket *tx_packet = (SPITxPacket *)spi3_tx_buf;
+          SPITxPacket *tx_packet = (SPITxPacket *)spi3_tx_buf_staging;
           
           tx_packet -> start = 0xBB;
           tx_packet -> msg_id = current_msg_id++;
@@ -131,7 +131,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
           float ez = axis_Z._target - tx_packet -> z;
           tx_packet -> error = sqrtf((ex * ex) + (ey * ey) + (ez * ez));
 
-          SCB_CleanDCache_by_Addr((uint32_t *)spi3_tx_buf, sizeof(spi3_tx_buf));
+          memcpy(spi3_tx_buf_active, spi3_tx_buf_staging, sizeof(SPITxPacket));
+          SCB_CleanDCache_by_Addr((uint32_t *)spi3_tx_buf_active, sizeof(SPITxPacket));
+
         }
 
         if(++led_counter >= 10000){
@@ -184,24 +186,24 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
 
   // triggered when a full duplex communication is provided: full RX message from raspi and TX to raspi
   else if (hspi -> Instance == SPI3) {
-    SPIPacket *packet = (SPIPacket *)spi3_rx_buf; 
 
-    // Invalida la cache per leggere i dati freschi della Raspi
+    static SPIPacket packet;
     SCB_InvalidateDCache_by_Addr((uint32_t *)spi3_rx_buf, sizeof(spi3_rx_buf));
+    memcpy(&packet, spi3_rx_buf, sizeof(SPIPacket));
 
-    if (packet->start == 0xAA) {
+    if (packet.start == 0xAA) {
       machine_state = 2;
         
-      axis_X._target_pos = packet -> x;
-      axis_Y._target_pos = packet -> y;
-      axis_Z._target = packet -> z;
-      axis_A._target = packet -> a;
-      axis_C._target = packet -> c;
-      axis_X._target_vel = packet -> vx;
-      axis_Y._target_vel = packet -> vy;
+      axis_X._target_pos = packet.x;
+      axis_Y._target_pos = packet.y;
+      axis_Z._target = packet.z;
+      axis_A._target = packet.a;
+      axis_C._target = packet.c;
+      axis_X._target_vel = packet.vx;
+      axis_Y._target_vel = packet.vy;
     }
     // homing procedure
-    if (packet -> start == 0xCC) {
+    if (packet.start == 0xCC) {
 
       machine_state = 1;
       axis_X._pid_vel._output = -5.0f;

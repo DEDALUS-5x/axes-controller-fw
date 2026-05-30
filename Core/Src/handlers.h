@@ -15,6 +15,7 @@
 #include "main.h"
 #include "types.h"
 #include "ctrl.h"
+#include <string.h>
 
 #define TIM6_FREQ 10000.0
 
@@ -35,6 +36,10 @@ extern Stepper axis_Z, axis_A, axis_C;
 extern float current_values[3];
 extern volatile uint8_t current_axis_idx;
 
+extern uint8_t spi3_rx_buf[sizeof(SPIPacket)];
+extern uint8_t spi3_tx_buf_active[sizeof(SPIPacket)];
+extern uint8_t spi3_tx_buf_staging[sizeof(SPITxPacket)];
+
 extern Encoder enc_rot_X, enc_rot_Y, enc_rot_Z, enc_rot_A, enc_rot_C;
 extern Encoder enc_lin_X, enc_lin_Y;
 
@@ -46,9 +51,6 @@ MACHINE STATE
 - 3: error
 */
 extern uint8_t machine_state;
-
-extern uint8_t spi3_rx_buf[sizeof(SPIPacket)];
-extern uint8_t spi3_tx_buf[sizeof(SPITxPacket)];
 
 /**
  * 

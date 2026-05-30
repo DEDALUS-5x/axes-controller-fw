@@ -63,8 +63,10 @@ uint16_t spi1_rx_buf[16] __attribute__((section(".dma_buffer"), aligned(32))); /
 uint16_t spi1_tx_buf[16] __attribute__((section(".dma_buffer"), aligned(32)));
 uint16_t spi2_rx_buf[16] __attribute__((section(".dma_buffer"), aligned(32))); // X, Y
 
-uint8_t spi3_rx_buf[sizeof(SPIPacket)] __attribute__((section(".dma_buffer"), aligned(32))); // from raspo
-uint8_t spi3_tx_buf[sizeof(SPITxPacket)] __attribute__((section(".dma_buffer"), aligned(32))); // to raspi
+uint8_t spi3_rx_buf[sizeof(SPIPacket)] __attribute__((section(".dma_buffer"), aligned(32))); // from raspi
+  // Raspberry SPI3
+uint8_t spi3_tx_buf_active[sizeof(SPIPacket)] __attribute__((section(".dma_buffer"), aligned(32)));
+uint8_t spi3_tx_buf_staging[sizeof(SPITxPacket)] __attribute__((section(".dma_buffer"), aligned(32)));
 
 uint16_t spi4_single_buf[16] __attribute__((section(".dma_buffer"), aligned(32)));
 uint8_t machine_state = 0;
@@ -183,6 +185,11 @@ int main(void)
   axis_C._enc_rot -> _offset = 0.0f;
   HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_2);
 
+  // SPI3
+  HAL_SPI_TransmitReceive_DMA(&hspi3, spi3_tx_buf_active, spi3_rx_buf, sizeof(SPIPacket));
+
+  // ENCODERS
+
   uint16_t cmd_clear = 0x4001; // error clear command
   uint16_t cmd_read  = 0xFFFF; // reading command
   uint16_t dummy = 0;
@@ -201,7 +208,6 @@ int main(void)
   SCB_CleanDCache_by_Addr((uint32_t*)spi1_tx_buf, sizeof(spi1_tx_buf));
   
   HAL_SPI_Receive_DMA(&hspi2, (uint8_t*)spi2_rx_buf, 2);
-  HAL_SPI_TransmitReceive_DMA(&hspi3, spi3_tx_buf, spi3_rx_buf, sizeof(SPIPacket));
 
   HAL_GPIO_TogglePin(LED_1_GPIO_Port, LED_1_Pin);
   HAL_Delay(500);
