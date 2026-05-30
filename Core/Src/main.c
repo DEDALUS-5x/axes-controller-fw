@@ -148,7 +148,14 @@ int main(void)
   MX_TIM15_Init();
   /* USER CODE BEGIN 2 */
 
-  // x axis
+  /*
+   __  __             _     
+   \ \/ /   __ ___  _(_)___ 
+    \  /   / _` \ \/ / / __|
+    /  \  | (_| |>  <| \__ \
+   /_/\_\  \__,_/_/\_\_|___/
+                            
+  */
   axis_X._enc_rot = &enc_rot_X; 
   axis_X._enc_lin = &enc_lin_X;
   axis_X._pwm_register = &TIM1->CCR1;
@@ -159,7 +166,14 @@ int main(void)
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1); 
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
 
-  // Y axis
+  /*
+   __   __     _          _     
+   \ \ / /    / \   __  _(_)___ 
+    \ V /    / _ \  \ \/ / / __|
+     | |    / ___ \  >  <| \__ \
+     |_|   /_/   \_\/_/\_\_|___/
+                                
+  */
   axis_Y._enc_rot = &enc_rot_Y;
   axis_Y._enc_lin = &enc_lin_Y;
   axis_Y._pwm_register = &TIM1->CCR3;
@@ -170,31 +184,55 @@ int main(void)
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
 
-  // Z axis
+  /*
+    _____     _          _     
+   |__  /    / \   __  _(_)___ 
+     / /    / _ \  \ \/ / / __|
+    / /_   / ___ \  >  <| \__ \
+   /____| /_/   \_\/_/\_\_|___/
+                               
+  */
   axis_Z._enc_rot = &enc_rot_Z;
   axis_Z._enc_rot -> _offset = 0.0f;
   HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4); 
 
-  // A axis
+  /*
+       _         _          _     
+      / \       / \   __  _(_)___ 
+     / _ \     / _ \  \ \/ / / __|
+    / ___ \   / ___ \  >  <| \__ \
+   /_/   \_\ /_/   \_\/_/\_\_|___/
+                                  
+  */
   axis_A._enc_rot = &enc_rot_A;
   axis_A._enc_rot -> _offset = 0.0f;
   HAL_TIM_PWM_Start(&htim15, TIM_CHANNEL_1);
 
-  // C axis
+  /*
+     ____      _          _     
+    / ___|    / \   __  _(_)___ 
+   | |       / _ \  \ \/ / / __|
+   | |___   / ___ \  >  <| \__ \
+    \____| /_/   \_\/_/\_\_|___/
+                                
+  */
   axis_C._enc_rot = &enc_rot_C;
   axis_C._enc_rot -> _offset = 0.0f;
   HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_2);
 
-  // SPI3
-  HAL_SPI_TransmitReceive_DMA(&hspi3, spi3_tx_buf_active, spi3_rx_buf, sizeof(SPIPacket));
-
   // ENCODERS
-
   uint16_t cmd_clear = 0x4001; // error clear command
   uint16_t cmd_read  = 0xFFFF; // reading command
   uint16_t dummy = 0;
 
-  // clean encoders transmissioin
+  /*
+    ____  ____ ___ _   ___       _ _   
+   / ___||  _ \_ _/ | |_ _|_ __ (_) |_ 
+   \___ \| |_) | || |  | || '_ \| | __|
+    ___) |  __/| || |  | || | | | | |_ 
+   |____/|_|  |___|_| |___|_| |_|_|\__|
+                                       
+  */
   HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_RESET);
   HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)&cmd_clear, (uint8_t*)&dummy, 1, 100);
   HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_SET);
@@ -203,11 +241,37 @@ int main(void)
   HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)&cmd_read, (uint8_t*)&dummy, 1, 100);
   HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_SET);
   HAL_Delay(2);
-
   spi1_tx_buf[0] = 0xFFFF;
   SCB_CleanDCache_by_Addr((uint32_t*)spi1_tx_buf, sizeof(spi1_tx_buf));
   
+  /*
+    ____  ____ ___ ____    ___       _ _   
+   / ___||  _ \_ _|___ \  |_ _|_ __ (_) |_ 
+   \___ \| |_) | |  __) |  | || '_ \| | __|
+    ___) |  __/| | / __/   | || | | | | |_ 
+   |____/|_|  |___|_____| |___|_| |_|_|\__|
+                                           
+  */
   HAL_SPI_Receive_DMA(&hspi2, (uint8_t*)spi2_rx_buf, 2);
+
+  /*
+    ____  ____ ___ _____   ___       _ _   
+   / ___||  _ \_ _|___ /  |_ _|_ __ (_) |_ 
+   \___ \| |_) | |  |_ \   | || '_ \| | __|
+    ___) |  __/| | ___) |  | || | | | | |_ 
+   |____/|_|  |___|____/  |___|_| |_|_|\__|
+                                           
+  */
+  HAL_SPI_TransmitReceive_DMA(&hspi3, spi3_tx_buf_active, spi3_rx_buf, sizeof(SPIPacket));
+
+  /*
+    _     _____ ____        ____                       
+   | |   | ____|  _ \ ___  |  _ \  __ _ _ __   ___ ___ 
+   | |   |  _| | | | / __| | | | |/ _` | '_ \ / __/ _ \
+   | |___| |___| |_| \__ \ | |_| | (_| | | | | (_|  __/
+   |_____|_____|____/|___/ |____/ \__,_|_| |_|\___\___|
+                                                       
+  */
 
   HAL_GPIO_TogglePin(LED_1_GPIO_Port, LED_1_Pin);
   HAL_Delay(500);
