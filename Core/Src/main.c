@@ -262,6 +262,7 @@ int main(void)
    |____/|_|  |___|____/  |___|_| |_|_|\__|
                                            
   */
+  spi3_tx_buf_active[0] = 0xBB; // Inizializza almeno lo start byte
   HAL_SPI_TransmitReceive_DMA(&hspi3, spi3_tx_buf_active, spi3_rx_buf, sizeof(SPIPacket));
 
   /*
