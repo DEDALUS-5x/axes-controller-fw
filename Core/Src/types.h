@@ -70,6 +70,7 @@ typedef struct {
     float acceleration[3];
 } ProfileCMD;
 
+#pragma pack(push, 1)
 typedef struct __attribute__((packed)){
     uint8_t start;
     float x;
@@ -96,5 +97,7 @@ typedef struct __attribute__((packed)) {
     uint8_t padding[2];
     // reach 32 byte SPIPacket in order to get a perfect full duplex communication
 } SPITxPacket;
+
+#pragma pack(pop)
 
 #endif

@@ -15,8 +15,6 @@
 static uint8_t pid_counter = 0;
 static uint32_t led_counter = 0;
 static uint8_t homing_counter = 0;
-static uint32_t counter = 0;
-
 
 void update_rotary_encoder(Encoder *enc, uint16_t raw_spi, float dt){
 
@@ -139,9 +137,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
           }
           tx_packet->check = calc_check;
 
-          memcpy(spi3_tx_buf_active, spi3_tx_buf_staging, sizeof(SPITxPacket));
-          SCB_CleanDCache_by_Addr((uint32_t *)spi3_tx_buf_active, sizeof(SPITxPacket));
-          
+          // memcpy(spi3_tx_buf_active, spi3_tx_buf_staging, sizeof(SPITxPacket));
+          // SCB_CleanDCache_by_Addr((uint32_t *)spi3_tx_buf_active, sizeof(SPITxPacket));
+
         }
 
         if(++led_counter >= 10000){
@@ -199,6 +197,10 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
     SCB_InvalidateDCache_by_Addr((uint32_t *)spi3_rx_buf, sizeof(spi3_rx_buf));
     memcpy(&packet, spi3_rx_buf, sizeof(SPIPacket));
 
+    memcpy(spi3_tx_buf_active, spi3_tx_buf_staging, sizeof(SPITxPacket));
+    SCB_CleanDCache_by_Addr((uint32_t *)spi3_tx_buf_active, sizeof(SPITxPacket));
+    HAL_SPI_TransmitReceive_DMA(&hspi3, spi3_tx_buf_active, spi3_rx_buf, sizeof(SPIPacket));
+
     if (packet.start == 0xAA) {
       machine_state = 2;
         
@@ -209,13 +211,6 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
       axis_C._target = packet.c;
       axis_X._target_vel = packet.vx;
       axis_Y._target_vel = packet.vy;
-
-      counter++;
-      
-      if(counter > 10){
-        HAL_GPIO_TogglePin(LED_2_GPIO_Port, LED_1_Pin);
-        counter = 0;
-      }
       
     }
     // homing procedure
