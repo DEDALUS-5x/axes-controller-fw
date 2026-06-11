@@ -385,19 +385,6 @@ void PeriphCommonClock_Config(void)
 
 /* USER CODE BEGIN 4 */
 
-/*
-void motor_command(Axis *axis, TIM_HandleTypeDef *htim, uint32_t channel1, uint32_t channel2) {
-    if (axis -> _pid._output > 0) {
-        __HAL_TIM_SET_COMPARE(htim, channel1, (uint32_t)fabsf(axis -> _pid._output));
-        __HAL_TIM_SET_COMPARE(htim, channel2, 0);
-    } else {
-        __HAL_TIM_SET_COMPARE(htim, channel1, 0);
-        __HAL_TIM_SET_COMPARE(htim, channel2, (uint32_t)fabsf(axis -> _pid._output));
-    }
-}
-*/
-
-
 /* USER CODE END 4 */
 
  /* MPU Configuration */

@@ -137,9 +137,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
           }
           tx_packet->check = calc_check;
 
-          // memcpy(spi3_tx_buf_active, spi3_tx_buf_staging, sizeof(SPITxPacket));
-          // SCB_CleanDCache_by_Addr((uint32_t *)spi3_tx_buf_active, sizeof(SPITxPacket));
-
         }
 
         if(++led_counter >= 10000){
