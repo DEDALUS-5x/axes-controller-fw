@@ -79,7 +79,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
         update_rotary_encoder(&enc_rot_X, spi2_rx_buf[0], dt);
         update_rotary_encoder(&enc_rot_Y, spi2_rx_buf[1], dt);
 
-        if (machine_state == 1 || machine_state == 2) {
+        if (machine_state == HOMING || machine_state == RUN) {
             stepper_loop(&axis_Z, &htim4, TIM_CHANNEL_4, DIR_Z1_GPIO_Port, DIR_Z1_Pin, 20.0f, 5.0f);
             stepper_loop(&axis_A, &htim15, TIM_CHANNEL_1, DIR_P1_GPIO_Port, DIR_P1_Pin, 20.0, 5.0f);
             stepper_loop(&axis_C, &htim8, TIM_CHANNEL_2, DIR_Y_GPIO_Port, DIR_Y_Pin, 20.0, 5.0f);
@@ -147,12 +147,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
           HAL_GPIO_TogglePin(LED_1_GPIO_Port, LED_1_Pin);
         }
 
-        if(machine_state == 2){
+        if(machine_state == RUN){
           PID_compute_vel(&axis_X, dt);
           PID_compute_vel(&axis_Y, dt);
         }
 
-        if(machine_state == 1 || machine_state == 2){
+        if(machine_state == HOMING || machine_state == RUN){
 
           motor_command(&axis_X, &htim1, TIM_CHANNEL_1, TIM_CHANNEL_2);
           motor_command(&axis_Y, &htim1, TIM_CHANNEL_3, TIM_CHANNEL_4);
@@ -202,7 +202,7 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
     HAL_SPI_TransmitReceive_DMA(&hspi3, spi3_tx_buf_active, spi3_rx_buf, sizeof(SPIPacket));
 
     if (packet.start == 0xAA) {
-      machine_state = 2;
+      machine_state = RUN;
         
       axis_X._target_pos = packet.x;
       axis_Y._target_pos = packet.y;
@@ -216,12 +216,14 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
     // homing procedure
     if (packet.start == 0xCC) {
 
-      machine_state = 1;
-      axis_X._pid_vel._output = -5.0f;
-      axis_Y._pid_vel._output = -5.0f;
-      axis_Z._target = 0;
-      axis_A._target = 0;
-      axis_C._target = 0;
+      HAL_GPIO_WritePin(EN_STEPPERS_GPIO_Port, EN_STEPPERS_Pin, RESET);
+
+      machine_state = HOMING;
+      axis_X._pid_vel._output = -1.0f;
+      axis_Y._pid_vel._output = -1.0f;
+      axis_Z._target = 0.0f;
+      axis_A._target = 0.0f;
+      axis_C._target = 0.0f;
 
       // motors command already embedded in tim6 handler. just keep a constnat pid output (pid disabled)
     }
@@ -240,7 +242,7 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 
-  if(machine_state == 1){
+  if(machine_state == HOMING){
 
     if (GPIO_Pin == ES_X_Pin) {
 
@@ -300,11 +302,11 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
     }
 
     if(homing_counter == 3){
-      machine_state = 2;
+      machine_state = RUN;
     }
   }
 
-  if(machine_state == 2){
+  if(machine_state == RUN){
 
     // ERROR! physical violations, stop motors
     __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 0);

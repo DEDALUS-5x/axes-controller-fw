@@ -69,7 +69,7 @@ uint8_t spi3_tx_buf_active[sizeof(SPIPacket)] __attribute__((section(".dma_buffe
 uint8_t spi3_tx_buf_staging[sizeof(SPITxPacket)] __attribute__((section(".dma_buffer"), aligned(32)));
 
 uint16_t spi4_single_buf[16] __attribute__((section(".dma_buffer"), aligned(32)));
-uint8_t machine_state = 0;
+uint8_t machine_state = INIT;
 
 volatile uint8_t current_axis_idx = 0; 
 float current_values[3];
@@ -283,10 +283,10 @@ int main(void)
 
   HAL_GPIO_WritePin(EN_STEPPERS_GPIO_Port, EN_STEPPERS_Pin, GPIO_PIN_RESET);
 
-  machine_state = 2;
+  machine_state = RUN;
   axis_Z._target = 400.0f;
-  axis_A._target = 200.0f;
-  axis_C._target = 300.0f;
+  axis_A._target = 0.0f;
+  axis_C._target = 0.0f;
 
   // let's start bitches
   HAL_TIM_Base_Start_IT(&htim6);
