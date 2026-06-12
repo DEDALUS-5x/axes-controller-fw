@@ -30,9 +30,13 @@ void update_rotary_encoder(Encoder *enc, uint16_t raw_spi, float dt){
   enc->_converted_value = total_pos_deg - enc->_offset;
 
   float instant_vel = (enc->_converted_value - enc->_last_converted_value) / dt;
-  enc->_velocity = (enc->_velocity * 0.8f) + (instant_vel * 0.2f);
-  enc->_last_converted_value = enc->_converted_value;
+  enc -> _velocity = (enc->_velocity * 0.8f) + (instant_vel * 0.2f);
+  enc -> _last_converted_value = enc->_converted_value;
+  enc -> _acceleration = enc -> _acceleration * 0.8f + ((enc -> _velocity - enc -> _last_velocity) / dt) * 0.2;
+  enc -> _last_velocity = enc -> _velocity;
 }
+
+
 
 
 /*
@@ -108,7 +112,16 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
           // int16_t in order to avoid overflow in case of negative values
           enc_lin_X._converted_value = (float)((int16_t)TIM2 -> CNT) * 0.1;
+          enc_lin_X._velocity = (enc_lin_X._converted_value - enc_lin_X._last_converted_value) / dt_pos;
+          enc_lin_X._acceleration = (enc_lin_X._velocity - enc_lin_X._last_velocity) / dt_pos;
           enc_lin_Y._converted_value = (float)((int16_t)TIM3 -> CNT) * 0.1;
+          enc_lin_Y._velocity = (enc_lin_Y._converted_value - enc_lin_Y._last_converted_value) / dt_pos;
+          enc_lin_Y._acceleration = (enc_lin_Y._velocity - enc_lin_Y._last_velocity) / dt_pos;
+          // update last readings
+          enc_lin_X._last_converted_value = enc_lin_X._converted_value;
+          enc_lin_X._last_velocity = enc_lin_X._velocity;
+          enc_lin_Y._last_converted_value = enc_lin_Y._converted_value;
+          enc_lin_Y._last_velocity = enc_lin_Y._velocity;
 
           axis_X._pid_vel._setpoint = PID_compute_pos(&axis_X._pid_pos, enc_lin_X._converted_value, dt_pos) + axis_X._target_vel;
           axis_Y._pid_vel._setpoint = PID_compute_pos(&axis_Y._pid_pos, enc_lin_Y._converted_value, dt_pos) + axis_Y._target_vel;
@@ -117,6 +130,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
           static uint32_t current_msg_id = 0;
           SPITxPacket *tx_packet = (SPITxPacket *)spi3_tx_buf_staging;
           
+          // FEEDBACK SPI PACKET
           tx_packet -> start = 0xBB;
           tx_packet -> msg_id = current_msg_id++;
           tx_packet -> x = enc_lin_X._converted_value;
@@ -124,6 +138,16 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
           tx_packet -> z = enc_rot_Z._converted_value;
           tx_packet -> a = enc_rot_A._converted_value;
           tx_packet -> c = enc_rot_C._converted_value;
+          tx_packet -> vx = enc_lin_X._velocity;
+          tx_packet -> vy = enc_lin_Y._velocity;
+          tx_packet -> vz = enc_rot_Z._velocity * 8.0f / 360.0f;
+          tx_packet -> va = enc_rot_A._velocity;
+          tx_packet -> vc = enc_rot_C._velocity;
+          tx_packet -> ax = enc_lin_X._acceleration;
+          tx_packet -> ay = enc_lin_Y._acceleration;
+          tx_packet -> az = enc_rot_Z._acceleration;
+          tx_packet -> aa = enc_rot_A._acceleration;
+          tx_packet -> ac = enc_rot_C._acceleration;
 
           float ex = axis_X._target_pos - tx_packet -> x;
           float ey = axis_Y._target_pos - tx_packet -> y;
@@ -132,7 +156,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
           uint8_t calc_check = 0;
           uint8_t *ptr = (uint8_t *)tx_packet;
-          for(int i = 0; i < 29; i++){
+          for(int i = 0; i < 69; i++){
               calc_check ^= ptr[i];
           }
           tx_packet->check = calc_check;

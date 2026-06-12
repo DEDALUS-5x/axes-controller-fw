@@ -34,6 +34,8 @@ typedef struct {
 
     float _last_raw_pos;
     float _last_converted_value;
+    float _last_velocity;
+    float _acceleration;
     int32_t _turns;
 
 } Encoder;
@@ -71,6 +73,8 @@ typedef struct {
 } ProfileCMD;
 
 #pragma pack(push, 1)
+
+// Full duplex communication with raspberry: 96 bytes
 typedef struct __attribute__((packed)){
     uint8_t start;
     float x;
@@ -81,7 +85,7 @@ typedef struct __attribute__((packed)){
     float vx;
     float vy;
     uint8_t check;
-    uint8_t padding[2];
+    uint8_t padding[66];
 } SPIPacket;
 
 typedef struct __attribute__((packed)) {
@@ -92,10 +96,19 @@ typedef struct __attribute__((packed)) {
     float    z;
     float    a;
     float    c;
+    float    vx;
+    float    vy;
+    float    va;
+    float    vc;
+    float    vz;
+    float    ax;
+    float    ay;
+    float    az;
+    float    aa;
+    float    ac;
     float    error;
     uint8_t  check;
-    uint8_t padding[2];
-    // reach 32 byte SPIPacket in order to get a perfect full duplex communication
+    uint8_t padding[26];
 } SPITxPacket;
 
 #pragma pack(pop)
