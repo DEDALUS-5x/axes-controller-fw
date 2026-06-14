@@ -62,10 +62,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
         const float dt = 0.0001f;
 
-        // SPI 1 and 2 interrogation
+        // SPI 1 request
         __HAL_SPI_CLEAR_OVRFLAG(&hspi1);
         HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_RESET);
-
         if (hspi1.State != HAL_SPI_STATE_READY) {
             HAL_SPI_Abort(&hspi1); 
         }
@@ -77,11 +76,24 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
             HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_SET);
         }
 
-        SCB_InvalidateDCache_by_Addr((uint32_t*)spi2_rx_buf, sizeof(spi2_rx_buf));
+        // SPI 2 request
+        __HAL_SPI_CLEAR_OVRFLAG(&hspi2);
+        if (hspi2.State != HAL_SPI_STATE_READY) {
+            HAL_SPI_Abort(&hspi2); 
+        }
+        HAL_GPIO_WritePin(SPI2_CSS_GPIO_Port, SPI2_CSS_Pin, GPIO_PIN_SET);
+        for(volatile int i=0; i<15; i++); 
+        __HAL_SPI_CLEAR_OVRFLAG(&hspi2);
+        HAL_GPIO_WritePin(SPI2_CSS_GPIO_Port, SPI2_CSS_Pin, GPIO_PIN_RESET);
+        if (HAL_SPI_TransmitReceive_DMA(&hspi2, (uint8_t*)spi2_tx_buf, (uint8_t*)spi2_rx_buf, 1) != HAL_OK) {
+            HAL_GPIO_WritePin(SPI2_CSS_GPIO_Port, SPI2_CSS_Pin, GPIO_PIN_SET);
+        }
+
+        // SCB_InvalidateDCache_by_Addr((uint32_t*)spi2_rx_buf, sizeof(spi2_rx_buf));
         
         // DMA buffer: [0]=EncX, [1]=EncY, [2]=EncY2
-        update_rotary_encoder(&enc_rot_X, spi2_rx_buf[0], dt);
-        update_rotary_encoder(&enc_rot_Y, spi2_rx_buf[1], dt);
+        // update_rotary_encoder(&enc_rot_X, spi2_rx_buf[0], dt);
+        // update_rotary_encoder(&enc_rot_Y, spi2_rx_buf[1], dt);
 
         if (machine_state == HOMING || machine_state == RUN) {
             stepper_loop(&axis_Z, &htim4, TIM_CHANNEL_4, DIR_Z1_GPIO_Port, DIR_Z1_Pin, 20.0f, 5.0f);
@@ -209,6 +221,14 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
     update_rotary_encoder(&enc_rot_A, spi1_rx_buf[1], 0.0001f);
     update_rotary_encoder(&enc_rot_C, spi1_rx_buf[2], 0.0001f);
     
+  }
+
+  else if(hspi -> Instance == SPI2){
+
+    HAL_GPIO_WritePin(SPI2_CSS_GPIO_Port, SPI2_CSS_Pin, GPIO_PIN_SET);
+    SCB_InvalidateDCache_by_Addr((uint32_t *)spi2_rx_buf, sizeof(spi2_rx_buf));
+    update_rotary_encoder(&enc_rot_X, spi2_rx_buf[0], 0.0001f);
+    update_rotary_encoder(&enc_rot_Y, spi2_rx_buf[1], 0.0001f);
   }
 
   // triggered when a full duplex communication is provided: full RX message from raspi and TX to raspi

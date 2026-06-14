@@ -34,6 +34,7 @@ MACHINE STATE
 extern uint8_t machine_state;
 
 extern SPI_HandleTypeDef hspi1;
+extern SPI_HandleTypeDef hspi2;
 extern SPI_HandleTypeDef hspi4;
 extern TIM_HandleTypeDef htim1;
 extern TIM_HandleTypeDef htim4;
@@ -46,6 +47,7 @@ extern SPI_HandleTypeDef hspi3;
 extern uint16_t spi1_rx_buf[16]; // Z1, A, C
 extern uint16_t spi1_tx_buf[16];
 extern uint16_t spi2_rx_buf[16]; // X, Y
+extern uint16_t spi2_tx_buf[16];
 extern uint16_t spi4_single_buf[16];
 extern Axis axis_X, axis_Y;
 extern Stepper axis_Z, axis_A, axis_C;

@@ -62,6 +62,7 @@ volatile float debug_angle_deg = 0.0f;
 uint16_t spi1_rx_buf[16] __attribute__((section(".dma_buffer"), aligned(32))); // Z1, A, C
 uint16_t spi1_tx_buf[16] __attribute__((section(".dma_buffer"), aligned(32)));
 uint16_t spi2_rx_buf[16] __attribute__((section(".dma_buffer"), aligned(32))); // X, Y
+uint16_t spi2_tx_buf[16] __attribute__((section(".dma_buffer"), aligned(32)));
 
 uint8_t spi3_rx_buf[sizeof(SPIPacket)] __attribute__((section(".dma_buffer"), aligned(32))); // from raspi
   // Raspberry SPI3
