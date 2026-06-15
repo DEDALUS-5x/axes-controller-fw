@@ -52,7 +52,7 @@ typedef struct {
     float _last_vel;
     float _ka;
 
-    volatile uint32_t *_pwm_register; // * al registro CCR del timer configurato in pwm
+    volatile uint32_t *_pwm_register; //registro CCR del timer pwm
 } Axis;
 
 typedef struct {

@@ -44,9 +44,9 @@ extern TIM_HandleTypeDef htim15;
 
 extern SPI_HandleTypeDef hspi3;
 
-extern uint16_t spi1_rx_buf[16]; // Z1, A, C
+extern uint16_t spi1_rx_buf[16];  // Y1, X, Z1
 extern uint16_t spi1_tx_buf[16];
-extern uint16_t spi2_rx_buf[16]; // X, Y
+extern uint16_t spi2_rx_buf[16];  // A1, C, F
 extern uint16_t spi2_tx_buf[16];
 extern uint16_t spi4_single_buf[16];
 extern Axis axis_X, axis_Y;
@@ -58,7 +58,7 @@ extern uint8_t spi3_rx_buf[sizeof(SPIPacket)];
 extern uint8_t spi3_tx_buf_active[sizeof(SPIPacket)];
 extern uint8_t spi3_tx_buf_staging[sizeof(SPITxPacket)];
 
-extern Encoder enc_rot_X, enc_rot_Y, enc_rot_Z, enc_rot_A, enc_rot_C;
+extern Encoder enc_rot_X, enc_rot_Y, enc_rot_Z, enc_rot_A, enc_rot_C, enc_rot_F;
 extern Encoder enc_lin_X, enc_lin_Y;
 
 

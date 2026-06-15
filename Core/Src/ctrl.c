@@ -125,9 +125,9 @@ void stepper_command(float speed, TIM_HandleTypeDef *htim, uint32_t channel, GPI
 
     if (htim->Instance == TIM1 || htim->Instance == TIM8 || htim->Instance == TIM15 || 
         htim->Instance == TIM16 || htim->Instance == TIM17) {
-        timer_base_clock = HAL_RCC_GetPCLK2Freq() * 2; // Solitamente APB2 x2 su H7
+        timer_base_clock = HAL_RCC_GetPCLK2Freq() * 2; // APB2 x2 on H7
     } else {
-        timer_base_clock = HAL_RCC_GetPCLK1Freq() * 2; // Solitamente APB1 x2 su H7
+        timer_base_clock = HAL_RCC_GetPCLK1Freq() * 2; // APB1 x2 on H7
     }
 
     uint32_t psc = htim->Instance->PSC + 1; // Il registro PSC è (valore - 1)

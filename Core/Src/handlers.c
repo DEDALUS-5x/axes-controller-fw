@@ -222,18 +222,18 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
 
     HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_SET);
     SCB_InvalidateDCache_by_Addr((uint32_t *)spi1_rx_buf, sizeof(spi1_rx_buf));
-    update_rotary_encoder(&enc_rot_Z, spi1_rx_buf[0], 0.0001f);
-    update_rotary_encoder(&enc_rot_A, spi1_rx_buf[1], 0.0001f);
-    update_rotary_encoder(&enc_rot_C, spi1_rx_buf[2], 0.0001f);
-    
+    update_rotary_encoder(&enc_rot_X, spi1_rx_buf[0], 0.0001f);
+    update_rotary_encoder(&enc_rot_Y, spi1_rx_buf[1], 0.0001f);
+    update_rotary_encoder(&enc_rot_Z, spi1_rx_buf[2], 0.0001f);
   }
 
   else if(hspi -> Instance == SPI2){
 
     HAL_GPIO_WritePin(SPI2_CSS_GPIO_Port, SPI2_CSS_Pin, GPIO_PIN_SET);
     SCB_InvalidateDCache_by_Addr((uint32_t *)spi2_rx_buf, sizeof(spi2_rx_buf));
-    update_rotary_encoder(&enc_rot_X, spi2_rx_buf[0], 0.0001f);
-    update_rotary_encoder(&enc_rot_Y, spi2_rx_buf[1], 0.0001f);
+    update_rotary_encoder(&enc_rot_A, spi2_rx_buf[0], 0.0001f);
+    update_rotary_encoder(&enc_rot_C, spi2_rx_buf[1], 0.0001f);
+    update_rotary_encoder(&enc_rot_F, spi2_rx_buf[2], 0.0001f);
   }
 
   // triggered when a full duplex communication is provided: full RX message from raspi and TX to raspi
