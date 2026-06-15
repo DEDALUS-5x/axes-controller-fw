@@ -222,8 +222,8 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
 
     HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_SET);
     SCB_InvalidateDCache_by_Addr((uint32_t *)spi1_rx_buf, sizeof(spi1_rx_buf));
-    update_rotary_encoder(&enc_rot_X, spi1_rx_buf[0], 0.0001f);
-    update_rotary_encoder(&enc_rot_Y, spi1_rx_buf[1], 0.0001f);
+    update_rotary_encoder(&enc_rot_X, spi1_rx_buf[1], 0.0001f);
+    update_rotary_encoder(&enc_rot_Y, spi1_rx_buf[0], 0.0001f);
     update_rotary_encoder(&enc_rot_Z, spi1_rx_buf[2], 0.0001f);
   }
 
