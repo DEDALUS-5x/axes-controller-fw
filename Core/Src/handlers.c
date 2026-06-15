@@ -140,38 +140,43 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
           // Feedback packet to send to the raspi
           static uint32_t current_msg_id = 0;
-          SPITxPacket *tx_packet = (SPITxPacket *)spi3_tx_buf_staging;
+          SPITxPacket tx_packet;
           
           // FEEDBACK SPI PACKET
-          tx_packet -> start = 0xBB;
-          tx_packet -> msg_id = current_msg_id++;
-          tx_packet -> x = enc_lin_X._converted_value;
-          tx_packet -> y = enc_lin_Y._converted_value;
-          tx_packet -> z = enc_rot_Z._converted_value;
-          tx_packet -> a = enc_rot_A._converted_value;
-          tx_packet -> c = enc_rot_C._converted_value;
-          tx_packet -> vx = enc_lin_X._velocity;
-          tx_packet -> vy = enc_lin_Y._velocity;
-          tx_packet -> vz = enc_rot_Z._velocity * 8.0f / 360.0f;
-          tx_packet -> va = enc_rot_A._velocity;
-          tx_packet -> vc = enc_rot_C._velocity;
-          tx_packet -> ax = enc_lin_X._acceleration;
-          tx_packet -> ay = enc_lin_Y._acceleration;
-          tx_packet -> az = enc_rot_Z._acceleration;
-          tx_packet -> aa = enc_rot_A._acceleration;
-          tx_packet -> ac = enc_rot_C._acceleration;
+          tx_packet.start = 0xBB;
+          tx_packet.msg_id = current_msg_id++;
+          tx_packet.x = enc_lin_X._converted_value;
+          tx_packet.y = enc_lin_Y._converted_value;
+          tx_packet.z = enc_rot_Z._converted_value;
+          tx_packet.a = enc_rot_A._converted_value;
+          tx_packet.c = enc_rot_C._converted_value;
+          tx_packet.vx = enc_lin_X._velocity;
+          tx_packet.vy = enc_lin_Y._velocity;
+          tx_packet.vz = enc_rot_Z._velocity * 8.0f / 360.0f;
+          tx_packet.va = enc_rot_A._velocity;
+          tx_packet.vc = enc_rot_C._velocity;
+          tx_packet.ax = enc_lin_X._acceleration;
+          tx_packet.ay = enc_lin_Y._acceleration;
+          tx_packet.az = enc_rot_Z._acceleration;
+          tx_packet.aa = enc_rot_A._acceleration;
+          tx_packet.ac = enc_rot_C._acceleration;
 
-          float ex = axis_X._target_pos - tx_packet -> x;
-          float ey = axis_Y._target_pos - tx_packet -> y;
-          float ez = axis_Z._target - tx_packet -> z;
-          tx_packet -> error = sqrtf((ex * ex) + (ey * ey) + (ez * ez));
+          float ex = axis_X._target_pos - tx_packet.x;
+          float ey = axis_Y._target_pos - tx_packet.y;
+          float ez = axis_Z._target - tx_packet.z;
+          tx_packet.error = sqrtf((ex * ex) + (ey * ey) + (ez * ez));
 
           uint8_t calc_check = 0;
-          uint8_t *ptr = (uint8_t *)tx_packet;
+          uint8_t *ptr = (uint8_t*)&tx_packet;
           for(int i = 0; i < 69; i++){
               calc_check ^= ptr[i];
           }
-          tx_packet->check = calc_check;
+          tx_packet.check = calc_check;
+
+          // tx_packet as tmp buffer. atomize memcpy
+          __disable_irq(); 
+          memcpy(spi3_tx_buf_staging, &tx_packet, sizeof(SPITxPacket));
+          __enable_irq();
 
         }
 

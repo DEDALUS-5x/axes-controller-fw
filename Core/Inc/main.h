@@ -77,12 +77,12 @@ void Error_Handler(void);
 #define N_NTC_GPIO_Port GPIOA
 #define H_NTC_Pin GPIO_PIN_3
 #define H_NTC_GPIO_Port GPIOA
+#define SPI3_CSS_Pin GPIO_PIN_4
+#define SPI3_CSS_GPIO_Port GPIOA
 #define MY2_A_Pin GPIO_PIN_6
 #define MY2_A_GPIO_Port GPIOA
 #define MY2_B_Pin GPIO_PIN_7
 #define MY2_B_GPIO_Port GPIOA
-#define SPI3_CSS_Pin GPIO_PIN_1
-#define SPI3_CSS_GPIO_Port GPIOB
 #define DIR_F_Pin GPIO_PIN_7
 #define DIR_F_GPIO_Port GPIOE
 #define STEP_F_Pin GPIO_PIN_8
