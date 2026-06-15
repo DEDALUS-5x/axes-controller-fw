@@ -31,6 +31,7 @@ typedef struct {
     float _converted_value;
     float _velocity;
     float _offset;
+    float g_ratio;
 
     float _last_raw_pos;
     float _last_converted_value;

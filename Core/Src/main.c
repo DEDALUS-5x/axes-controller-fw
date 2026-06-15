@@ -78,7 +78,8 @@ float current_values[3];
 Axis axis_X, axis_Y;
 Stepper axis_Z, axis_A, axis_C;
 
-Encoder enc_rot_X, enc_rot_Y, enc_rot_Z, enc_rot_A, enc_rot_C;
+Encoder enc_rot_X, enc_rot_Y, enc_rot_Z, enc_rot_A, enc_rot_C, enc_rot_F;
+
 Encoder enc_lin_X, enc_lin_Y;
 
 
@@ -148,6 +149,13 @@ int main(void)
   MX_TIM6_Init();
   MX_TIM15_Init();
   /* USER CODE BEGIN 2 */
+
+  enc_rot_X.g_ratio = 27.0f;
+  enc_rot_Y.g_ratio = 27.0f;
+  enc_rot_Z.g_ratio = 1.0f;
+  enc_rot_A.g_ratio = 1.0f;
+  enc_rot_C.g_ratio = 1.0f;
+  enc_rot_F.g_ratio = 1.0f;
 
   /*
    __  __             _     
@@ -291,6 +299,7 @@ int main(void)
 
   // let's start bitches
   HAL_TIM_Base_Start_IT(&htim6);
+  // uint32_t last_print = HAL_GetTick();
 
   /* USER CODE END 2 */
 
