@@ -53,8 +53,10 @@ float PID_compute_pos(PID *pid, float current_pos, float dt){
 }
 
 void PID_compute_vel(Axis *axis, float dt) {
-  float error = axis -> _pid_vel._setpoint - (axis -> _enc_rot -> _velocity) * DEG_TO_MM;
 
+  float current_linear_vel = axis -> _enc_rot -> _velocity * (DEG_TO_MM / axis -> _enc_rot -> g_ratio);
+
+  float error = axis -> _pid_vel._setpoint - current_linear_vel;
   float accel = (axis -> _target_vel - axis -> _last_vel) / dt;
   axis -> _last_vel = axis -> _target_vel;
 

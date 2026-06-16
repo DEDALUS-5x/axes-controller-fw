@@ -22,14 +22,20 @@ void update_rotary_encoder(Encoder *enc, uint16_t raw_spi, float dt){
     
   float diff = new_pos - enc->_last_raw_pos;
 
-  if (diff > 180.0f)  enc->_turns--;
-  else if (diff < -180.0f) enc->_turns++;
+  if (diff > 180.0f) {
+    diff -= 360.0f;
+    enc->_turns--;
+  }
+  else if (diff < -180.0f) {
+    diff += 360.0f;
+    enc->_turns++;
+  }
   enc->_last_raw_pos = new_pos;
 
   float total_pos_deg = (enc->_turns * 360.0f) + new_pos;
   enc->_converted_value = (total_pos_deg - enc->_offset)  / enc -> g_ratio ;
 
-  float instant_vel = (enc->_converted_value - enc->_last_converted_value) / dt;
+  float instant_vel = diff / dt;
   enc -> _velocity = (enc->_velocity * 0.8f) + (instant_vel * 0.2f);
   enc -> _last_converted_value = enc->_converted_value;
   enc -> _acceleration = enc -> _acceleration * 0.8f + ((enc -> _velocity - enc -> _last_velocity) / dt) * 0.2;
@@ -142,7 +148,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
           enc_lin_Y._last_converted_value = enc_lin_Y._converted_value;
           enc_lin_Y._last_velocity = enc_lin_Y._velocity;
           axis_X._pid_vel._setpoint = PID_compute_pos(&axis_X._pid_pos, enc_lin_X._converted_value, dt_pos) + axis_X._target_vel;
-          axis_Y._pid_vel._setpoint = PID_compute_pos(&axis_Y._pid_pos, enc_lin_Y._converted_value, dt_pos) + axis_Y._target_vel;
+          // axis_Y._pid_vel._setpoint = PID_compute_pos(&axis_Y._pid_pos, enc_lin_Y._converted_value, dt_pos) + axis_Y._target_vel;
+          axis_Y._pid_vel._setpoint = 2.0f;
 
           // Feedback packet to send to the raspi
           static uint32_t current_msg_id = 0;
