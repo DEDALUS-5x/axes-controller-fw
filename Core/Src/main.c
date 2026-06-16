@@ -150,7 +150,7 @@ int main(void)
   MX_TIM15_Init();
   /* USER CODE BEGIN 2 */
 
-  enc_rot_X.g_ratio = 27.0f;
+  enc_rot_X.g_ratio = 24.0f;
   enc_rot_Y.g_ratio = 27.0f;
   enc_rot_Z.g_ratio = 1.0f;
   enc_rot_A.g_ratio = 1.0f;
@@ -169,8 +169,8 @@ int main(void)
   axis_X._enc_lin = &enc_lin_X;
   axis_X._pwm_register = &TIM1->CCR1;
   axis_X._enc_rot -> _offset = 0.0f;
-  PID_init(&axis_X._pid_pos, 1.2f, 0.01f, 0.05f, 1000.0f);
-  PID_init(&axis_X._pid_vel, 10.0f, 1.5f, 0.0f, 1000.0f);
+  PID_init(&axis_X._pid_pos, 1.2f, 0.01f, 0.05f, 10999.0f);
+  PID_init(&axis_X._pid_vel, 10.0f, 1.5f, 0.0f, 10999.0f);
   HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_ALL);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1); 
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
@@ -293,9 +293,9 @@ int main(void)
   HAL_GPIO_WritePin(EN_STEPPERS_GPIO_Port, EN_STEPPERS_Pin, GPIO_PIN_RESET);
 
   machine_state = RUN;
-  axis_Z._target = 400.0f;
-  axis_A._target = 0.0f;
-  axis_C._target = 0.0f;
+
+  axis_Y._target_pos = 10.0f;
+  axis_Y._target_vel = 10.0f;
 
   // let's start bitches
   HAL_TIM_Base_Start_IT(&htim6);

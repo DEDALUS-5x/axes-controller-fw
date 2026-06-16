@@ -53,7 +53,7 @@ float PID_compute_pos(PID *pid, float current_pos, float dt){
 }
 
 void PID_compute_vel(Axis *axis, float dt) {
-  float error = axis -> _pid_vel._setpoint - axis -> _enc_rot -> _velocity;
+  float error = axis -> _pid_vel._setpoint - (axis -> _enc_rot -> _velocity) * DEG_TO_MM;
 
   float accel = (axis -> _target_vel - axis -> _last_vel) / dt;
   axis -> _last_vel = axis -> _target_vel;
@@ -82,7 +82,7 @@ void PID_compute_vel(Axis *axis, float dt) {
 
   axis -> _pid_vel._output = out;
   
-  *(axis -> _pwm_register) = (uint32_t)fabsf(out);
+  // *(axis -> _pwm_register) = (uint32_t)fabsf(out);
 }
 
 void motor_command(Axis *axis, TIM_HandleTypeDef *htim, uint32_t channel1, uint32_t channel2) {

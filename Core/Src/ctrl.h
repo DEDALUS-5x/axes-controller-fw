@@ -14,6 +14,8 @@
 #include "main.h"
 #include "types.h"
 
+#define DEG_TO_MM (40.0f / 360.0f)
+
 void PID_init(PID *pid, float kp, float ki, float kd, float limit);
 
 // void PID_compute(Axis *axis, float dt);
