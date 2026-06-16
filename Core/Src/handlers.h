@@ -18,6 +18,7 @@
 #include <string.h>
 
 #define TIM6_FREQ 10000.0
+#define TOL2MM 0.01f
 
 #define INIT 0
 #define HOMING 1

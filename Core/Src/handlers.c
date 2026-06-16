@@ -122,19 +122,25 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
           pid_counter = 0;
           const float dt_pos = 0.001f;
 
-          // int16_t in order to avoid overflow in case of negative values
-          enc_lin_X._converted_value = (float)((int16_t)TIM2 -> CNT) * 0.1;
-          enc_lin_X._velocity = (enc_lin_X._converted_value - enc_lin_X._last_converted_value) / dt_pos;
-          enc_lin_X._acceleration = (enc_lin_X._velocity - enc_lin_X._last_velocity) / dt_pos;
-          enc_lin_Y._converted_value = (float)((int16_t)TIM5 -> CNT) * 0.1;
-          enc_lin_Y._velocity = (enc_lin_Y._converted_value - enc_lin_Y._last_converted_value) / dt_pos;
-          enc_lin_Y._acceleration = (enc_lin_Y._velocity - enc_lin_Y._last_velocity) / dt_pos;
+          // X
+          enc_lin_X._converted_value = (float)((int32_t)TIM2 -> CNT) * 0.01f;
+          float inst_vel_x = (enc_lin_X._converted_value - enc_lin_X._last_converted_value) / dt_pos;
+          enc_lin_X._velocity = (enc_lin_X._velocity * 0.8f) + (inst_vel_x * 0.2f);
+          float inst_acc_x = (enc_lin_X._velocity - enc_lin_X._last_velocity) / dt_pos;
+          enc_lin_X._acceleration = (enc_lin_X._acceleration * 0.8f) + (inst_acc_x * 0.2f);
+
+          // Y
+          enc_lin_Y._converted_value = (float)((int32_t)TIM5 -> CNT) * 0.01f;        
+          float inst_vel_y = (enc_lin_Y._converted_value - enc_lin_Y._last_converted_value) / dt_pos;
+          enc_lin_Y._velocity = (enc_lin_Y._velocity * 0.8f) + (inst_vel_y * 0.2f);
+          float inst_acc_y = (enc_lin_Y._velocity - enc_lin_Y._last_velocity) / dt_pos;
+          enc_lin_Y._acceleration = (enc_lin_Y._acceleration * 0.8f) + (inst_acc_y * 0.2f);
+
           // update last readings
           enc_lin_X._last_converted_value = enc_lin_X._converted_value;
           enc_lin_X._last_velocity = enc_lin_X._velocity;
           enc_lin_Y._last_converted_value = enc_lin_Y._converted_value;
           enc_lin_Y._last_velocity = enc_lin_Y._velocity;
-
           axis_X._pid_vel._setpoint = PID_compute_pos(&axis_X._pid_pos, enc_lin_X._converted_value, dt_pos) + axis_X._target_vel;
           axis_Y._pid_vel._setpoint = PID_compute_pos(&axis_Y._pid_pos, enc_lin_Y._converted_value, dt_pos) + axis_Y._target_vel;
 
