@@ -189,7 +189,7 @@ int main(void)
   axis_Y._enc_rot -> _offset = 0.0f;
   PID_init(&axis_Y._pid_pos, 1.0f, 0.0f, 0.01f, 300.0f);
   PID_init(&axis_Y._pid_vel, 10.0f, 1.5f, 0.0f, 1000.0f);
-  HAL_TIM_Encoder_Start(&htim3, TIM_CHANNEL_ALL);
+  HAL_TIM_Encoder_Start(&htim5, TIM_CHANNEL_ALL);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
 

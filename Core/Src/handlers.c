@@ -126,7 +126,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
           enc_lin_X._converted_value = (float)((int16_t)TIM2 -> CNT) * 0.1;
           enc_lin_X._velocity = (enc_lin_X._converted_value - enc_lin_X._last_converted_value) / dt_pos;
           enc_lin_X._acceleration = (enc_lin_X._velocity - enc_lin_X._last_velocity) / dt_pos;
-          enc_lin_Y._converted_value = (float)((int16_t)TIM3 -> CNT) * 0.1;
+          enc_lin_Y._converted_value = (float)((int16_t)TIM5 -> CNT) * 0.1;
           enc_lin_Y._velocity = (enc_lin_Y._converted_value - enc_lin_Y._last_converted_value) / dt_pos;
           enc_lin_Y._acceleration = (enc_lin_Y._velocity - enc_lin_Y._last_velocity) / dt_pos;
           // update last readings
