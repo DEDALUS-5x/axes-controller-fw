@@ -150,8 +150,8 @@ int main(void)
   MX_TIM15_Init();
   /* USER CODE BEGIN 2 */
 
-  enc_rot_X.g_ratio = 24.0f;
-  enc_rot_Y.g_ratio = 27.0f;
+  enc_rot_X.g_ratio = 27.0f;
+  enc_rot_Y.g_ratio = 24.0f;
   enc_rot_Z.g_ratio = 1.0f;
   enc_rot_A.g_ratio = 1.0f;
   enc_rot_C.g_ratio = 1.0f;
@@ -169,8 +169,8 @@ int main(void)
   axis_X._enc_lin = &enc_lin_X;
   axis_X._pwm_register = &TIM1->CCR1;
   axis_X._enc_rot -> _offset = 0.0f;
-  PID_init(&axis_X._pid_pos, 1.2f, 0.01f, 0.05f, 10999.0f);
-  PID_init(&axis_X._pid_vel, 10.0f, 1.5f, 0.0f, 10999.0f);
+  PID_init(&axis_X._pid_pos, 1.2f, 0.01f, 0.05f, 5000.0f);
+  PID_init(&axis_X._pid_vel, 100.0f, 0.01f, 0.01f, 5000.0f);
   HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_ALL);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1); 
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
@@ -188,7 +188,8 @@ int main(void)
   axis_Y._pwm_register = &TIM1->CCR3;
   axis_Y._enc_rot -> _offset = 0.0f;
   PID_init(&axis_Y._pid_pos, 100.0f, 0.000916f, 0.000916f, 300.0f);
-  PID_init(&axis_Y._pid_vel, 366.4f, 0.0916f, 0.000916f, 10999.0f);
+  // PID_init(&axis_Y._pid_vel, 366.4f, 0.0916f, 0.000916f, 3000.0f);
+  PID_init(&axis_Y._pid_vel, 100.0f, 0.01f, 0.01f, 7000.0f);
   HAL_TIM_Encoder_Start(&htim5, TIM_CHANNEL_ALL);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
@@ -228,30 +229,38 @@ int main(void)
   axis_C._enc_rot = &enc_rot_C;
   axis_C._enc_rot -> _offset = 0.0f;
   HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_2);
+  
+  uint16_t cmd_clear[2] = {0x4001, 0x4001};
+  uint16_t cmd_read[2]  = {0xFFFF, 0xFFFF};
+  uint16_t dummy[2]     = {0, 0};
 
-  // ENCODERS
-  uint16_t cmd_clear = 0x4001; // error clear command
-  uint16_t cmd_read  = 0xFFFF; // reading command
-  uint16_t dummy = 0;
-
-  /*
-    ____  ____ ___ _   ___       _ _   
-   / ___||  _ \_ _/ | |_ _|_ __ (_) |_ 
-   \___ \| |_) | || |  | || '_ \| | __|
-    ___) |  __/| || |  | || | | | | |_ 
-   |____/|_|  |___|_| |___|_| |_|_|\__|
-                                       
-  */
   HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_RESET);
-  HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)&cmd_clear, (uint8_t*)&dummy, 1, 100);
+  for(volatile int i=0; i<150; i++);
+  HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)cmd_clear, (uint8_t*)dummy, 2, 100);
+  for(volatile int i=0; i<15; i++); 
   HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_SET);
   HAL_Delay(2);
+
   HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_RESET);
-  HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)&cmd_read, (uint8_t*)&dummy, 1, 100);
+  for(volatile int i=0; i<150; i++); // setup time
+  HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)cmd_read, (uint8_t*)dummy, 2, 100);
+  for(volatile int i=0; i<15; i++); // hold time
   HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_SET);
   HAL_Delay(2);
+
+  HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_RESET);
+  for(volatile int i=0; i<150; i++);
+  HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)cmd_read, (uint8_t*)dummy, 2, 100);
+  for(volatile int i=0; i<15; i++);
+  HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_SET);
+  HAL_Delay(2);
+
   spi1_tx_buf[0] = 0xFFFF;
+  spi1_tx_buf[1] = 0xFFFF;
   SCB_CleanDCache_by_Addr((uint32_t*)spi1_tx_buf, sizeof(spi1_tx_buf));
+  enc_rot_X._last_raw_pos = (float)(dummy[0] & 0x3FFF) * (360.0f / 16384.0f);
+  enc_rot_Y._last_raw_pos = (float)(dummy[1] & 0x3FFF) * (360.0f / 16384.0f);
+  
   
   /*
     ____  ____ ___ ____    ___       _ _   
@@ -294,12 +303,11 @@ int main(void)
 
   machine_state = RUN;
 
-  axis_Y._target_pos = 10.0f;
-  axis_Y._target_vel = 10.0f;
+  axis_X._target_pos = 10.0f;
+  axis_X._target_vel = 30.0f;
 
   // let's start bitches
   HAL_TIM_Base_Start_IT(&htim6);
-  // uint32_t last_print = HAL_GetTick();
 
   /* USER CODE END 2 */
 
@@ -310,8 +318,6 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    // __WFI();
-
   }
   /* USER CODE END 3 */
 }

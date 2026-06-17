@@ -18,10 +18,24 @@ static uint8_t homing_counter = 0;
 
 void update_rotary_encoder(Encoder *enc, uint16_t raw_spi, float dt){
 
-  float new_pos = (float)(raw_spi & 0x3FFF) * (360.0f / 16384.0f);
-    
-  float diff = new_pos - enc->_last_raw_pos;
+  static uint32_t missed_X = 1, missed_Y = 1, missed_Z = 1;
+  static uint32_t missed_A = 1, missed_C = 1, missed_F = 1;
+  
+  uint32_t *missed_ptr = &missed_X;
+  if (enc == &enc_rot_X) missed_ptr = &missed_X;
+  else if (enc == &enc_rot_Y) missed_ptr = &missed_Y;
+  else if (enc == &enc_rot_Z) missed_ptr = &missed_Z;
+  else if (enc == &enc_rot_A) missed_ptr = &missed_A;
+  else if (enc == &enc_rot_C) missed_ptr = &missed_C;
+  else if (enc == &enc_rot_F) missed_ptr = &missed_F;
 
+  if (raw_spi & 0x4000) {
+    (*missed_ptr)++; // cycle skip, to be recovered
+    return; 
+  }
+
+  float new_pos = (float)(raw_spi & 0x3FFF) * (360.0f / 16384.0f);
+  float diff = new_pos - enc->_last_raw_pos;
   if (diff > 180.0f) {
     diff -= 360.0f;
     enc->_turns--;
@@ -35,13 +49,16 @@ void update_rotary_encoder(Encoder *enc, uint16_t raw_spi, float dt){
   float total_pos_deg = (enc->_turns * 360.0f) + new_pos;
   enc->_converted_value = (total_pos_deg - enc->_offset)  / enc -> g_ratio ;
 
-  float instant_vel = diff / dt;
-  enc -> _velocity = (enc->_velocity * 0.8f) + (instant_vel * 0.2f);
+  float actual_dt = dt * (float)(*missed_ptr);
+  float instant_vel = diff / actual_dt;
+  
+  enc -> _velocity = (enc->_velocity * 0.99f) + (instant_vel * 0.01f);
   enc -> _last_converted_value = enc->_converted_value;
-  enc -> _acceleration = enc -> _acceleration * 0.8f + ((enc -> _velocity - enc -> _last_velocity) / dt) * 0.2;
+  enc -> _acceleration = enc -> _acceleration * 0.95f + ((enc -> _velocity - enc -> _last_velocity) / actual_dt) * 0.05f;
   enc -> _last_velocity = enc -> _velocity;
-}
 
+  *missed_ptr = 1;
+}
 
 
 
@@ -70,15 +87,14 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
         // SPI 1 request
         __HAL_SPI_CLEAR_OVRFLAG(&hspi1);
-        HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_RESET);
         if (hspi1.State != HAL_SPI_STATE_READY) {
             HAL_SPI_Abort(&hspi1); 
         }
-        HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_SET);
-        for(volatile int i=0; i<15; i++); 
         __HAL_SPI_CLEAR_OVRFLAG(&hspi1);
+        SCB_CleanDCache_by_Addr((uint32_t*)spi1_tx_buf, sizeof(spi1_tx_buf));
         HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_RESET);
-        if (HAL_SPI_TransmitReceive_DMA(&hspi1, (uint8_t*)spi1_tx_buf, (uint8_t*)spi1_rx_buf, 1) != HAL_OK) {
+        for(volatile int i=0; i<150; i++);
+        if (HAL_SPI_TransmitReceive_DMA(&hspi1, (uint8_t*)spi1_tx_buf, (uint8_t*)spi1_rx_buf, 2) != HAL_OK) {
             HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_SET);
         }
 
@@ -94,12 +110,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
         if (HAL_SPI_TransmitReceive_DMA(&hspi2, (uint8_t*)spi2_tx_buf, (uint8_t*)spi2_rx_buf, 1) != HAL_OK) {
             HAL_GPIO_WritePin(SPI2_CSS_GPIO_Port, SPI2_CSS_Pin, GPIO_PIN_SET);
         }
-
-        // SCB_InvalidateDCache_by_Addr((uint32_t*)spi2_rx_buf, sizeof(spi2_rx_buf));
-        
-        // DMA buffer: [0]=EncX, [1]=EncY, [2]=EncY2
-        // update_rotary_encoder(&enc_rot_X, spi2_rx_buf[0], dt);
-        // update_rotary_encoder(&enc_rot_Y, spi2_rx_buf[1], dt);
 
         if (machine_state == HOMING || machine_state == RUN) {
             stepper_loop(&axis_Z, &htim4, TIM_CHANNEL_4, DIR_Z1_GPIO_Port, DIR_Z1_Pin, 20.0f, 5.0f);
@@ -147,9 +157,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
           enc_lin_X._last_velocity = enc_lin_X._velocity;
           enc_lin_Y._last_converted_value = enc_lin_Y._converted_value;
           enc_lin_Y._last_velocity = enc_lin_Y._velocity;
-          axis_X._pid_vel._setpoint = PID_compute_pos(&axis_X._pid_pos, enc_lin_X._converted_value, dt_pos) + axis_X._target_vel;
+          // axis_X._pid_vel._setpoint = PID_compute_pos(&axis_X._pid_pos, enc_lin_X._converted_value, dt_pos) + axis_X._target_vel;
           // axis_Y._pid_vel._setpoint = PID_compute_pos(&axis_Y._pid_pos, enc_lin_Y._converted_value, dt_pos) + axis_Y._target_vel;
-          axis_Y._pid_vel._setpoint = 2.0f;
+          axis_X._pid_vel._setpoint = axis_X._target_vel;
+          axis_Y._pid_vel._setpoint = axis_Y._target_vel;
 
           // Feedback packet to send to the raspi
           static uint32_t current_msg_id = 0;
@@ -232,15 +243,19 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
 
   if (hspi -> Instance == SPI1){
-
+    
+    for(volatile int i=0; i<15; i++);
     HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_SET);
     SCB_InvalidateDCache_by_Addr((uint32_t *)spi1_rx_buf, sizeof(spi1_rx_buf));
+    
     update_rotary_encoder(&enc_rot_X, spi1_rx_buf[1], 0.0001f);
     update_rotary_encoder(&enc_rot_Y, spi1_rx_buf[0], 0.0001f);
     update_rotary_encoder(&enc_rot_Z, spi1_rx_buf[2], 0.0001f);
   }
 
   else if(hspi -> Instance == SPI2){
+
+  for(volatile int i=0; i<15; i++);
 
     HAL_GPIO_WritePin(SPI2_CSS_GPIO_Port, SPI2_CSS_Pin, GPIO_PIN_SET);
     SCB_InvalidateDCache_by_Addr((uint32_t *)spi2_rx_buf, sizeof(spi2_rx_buf));
