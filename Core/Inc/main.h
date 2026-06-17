@@ -129,8 +129,16 @@ void Error_Handler(void);
 #define DIR_P2_GPIO_Port GPIOD
 #define SPI1_CSS_Pin GPIO_PIN_10
 #define SPI1_CSS_GPIO_Port GPIOG
+#define ENC_C_PWM_Pin GPIO_PIN_12
+#define ENC_C_PWM_GPIO_Port GPIOG
+#define ENC_F_PWM_Pin GPIO_PIN_13
+#define ENC_F_PWM_GPIO_Port GPIOG
 #define MX_B_Pin GPIO_PIN_3
 #define MX_B_GPIO_Port GPIOB
+#define ENC_A_PWM_Pin GPIO_PIN_6
+#define ENC_A_PWM_GPIO_Port GPIOB
+#define ENC_Z_PWM_Pin GPIO_PIN_7
+#define ENC_Z_PWM_GPIO_Port GPIOB
 #define STEP_Z1_Pin GPIO_PIN_9
 #define STEP_Z1_GPIO_Port GPIOB
 #define DIR_Z1_Pin GPIO_PIN_1
