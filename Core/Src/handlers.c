@@ -18,19 +18,7 @@ static uint8_t homing_counter = 0;
 
 void update_rotary_encoder(Encoder *enc, uint16_t raw_spi, float dt){
 
-  static uint32_t missed_X = 1, missed_Y = 1, missed_Z = 1;
-  static uint32_t missed_A = 1, missed_C = 1, missed_F = 1;
-  
-  uint32_t *missed_ptr = &missed_X;
-  if (enc == &enc_rot_X) missed_ptr = &missed_X;
-  else if (enc == &enc_rot_Y) missed_ptr = &missed_Y;
-  else if (enc == &enc_rot_Z) missed_ptr = &missed_Z;
-  else if (enc == &enc_rot_A) missed_ptr = &missed_A;
-  else if (enc == &enc_rot_C) missed_ptr = &missed_C;
-  else if (enc == &enc_rot_F) missed_ptr = &missed_F;
-
   if (raw_spi & 0x4000) {
-    (*missed_ptr)++; // cycle skip, to be recovered
     return; 
   }
 
@@ -49,15 +37,12 @@ void update_rotary_encoder(Encoder *enc, uint16_t raw_spi, float dt){
   float total_pos_deg = (enc->_turns * 360.0f) + new_pos;
   enc->_converted_value = (total_pos_deg - enc->_offset)  / enc -> g_ratio ;
 
-  float actual_dt = dt * (float)(*missed_ptr);
-  float instant_vel = diff / actual_dt;
+  float instant_vel = diff / dt;
   
   enc -> _velocity = (enc->_velocity * 0.99f) + (instant_vel * 0.01f);
   enc -> _last_converted_value = enc->_converted_value;
-  enc -> _acceleration = enc -> _acceleration * 0.95f + ((enc -> _velocity - enc -> _last_velocity) / actual_dt) * 0.05f;
+  enc -> _acceleration = enc -> _acceleration * 0.95f + ((enc -> _velocity - enc -> _last_velocity) / dt) * 0.05f;
   enc -> _last_velocity = enc -> _velocity;
-
-  *missed_ptr = 1;
 }
 
 
@@ -86,26 +71,29 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
         const float dt = 0.0001f;
 
         // SPI 1 request
+        /*
         __HAL_SPI_CLEAR_OVRFLAG(&hspi1);
         if (hspi1.State != HAL_SPI_STATE_READY) {
             HAL_SPI_Abort(&hspi1); 
         }
         __HAL_SPI_CLEAR_OVRFLAG(&hspi1);
+        */
         SCB_CleanDCache_by_Addr((uint32_t*)spi1_tx_buf, sizeof(spi1_tx_buf));
         HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_RESET);
-        for(volatile int i=0; i<150; i++);
         if (HAL_SPI_TransmitReceive_DMA(&hspi1, (uint8_t*)spi1_tx_buf, (uint8_t*)spi1_rx_buf, 2) != HAL_OK) {
             HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_SET);
         }
 
         // SPI 2 request
+        /*
         __HAL_SPI_CLEAR_OVRFLAG(&hspi2);
         if (hspi2.State != HAL_SPI_STATE_READY) {
             HAL_SPI_Abort(&hspi2); 
         }
+__HAL_SPI_CLEAR_OVRFLAG(&hspi2);
+      */
         HAL_GPIO_WritePin(SPI2_CSS_GPIO_Port, SPI2_CSS_Pin, GPIO_PIN_SET);
-        for(volatile int i=0; i<15; i++); 
-        __HAL_SPI_CLEAR_OVRFLAG(&hspi2);
+        
         HAL_GPIO_WritePin(SPI2_CSS_GPIO_Port, SPI2_CSS_Pin, GPIO_PIN_RESET);
         if (HAL_SPI_TransmitReceive_DMA(&hspi2, (uint8_t*)spi2_tx_buf, (uint8_t*)spi2_rx_buf, 1) != HAL_OK) {
             HAL_GPIO_WritePin(SPI2_CSS_GPIO_Port, SPI2_CSS_Pin, GPIO_PIN_SET);
@@ -244,18 +232,16 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
 
   if (hspi -> Instance == SPI1){
     
-    for(volatile int i=0; i<15; i++);
     HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_SET);
     SCB_InvalidateDCache_by_Addr((uint32_t *)spi1_rx_buf, sizeof(spi1_rx_buf));
     
     update_rotary_encoder(&enc_rot_X, spi1_rx_buf[1], 0.0001f);
     update_rotary_encoder(&enc_rot_Y, spi1_rx_buf[0], 0.0001f);
-    update_rotary_encoder(&enc_rot_Z, spi1_rx_buf[2], 0.0001f);
+    // update_rotary_encoder(&enc_rot_Z, spi1_rx_buf[2], 0.0001f);
   }
 
   else if(hspi -> Instance == SPI2){
 
-  for(volatile int i=0; i<15; i++);
 
     HAL_GPIO_WritePin(SPI2_CSS_GPIO_Port, SPI2_CSS_Pin, GPIO_PIN_SET);
     SCB_InvalidateDCache_by_Addr((uint32_t *)spi2_rx_buf, sizeof(spi2_rx_buf));

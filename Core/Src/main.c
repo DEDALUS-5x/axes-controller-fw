@@ -236,23 +236,17 @@ int main(void)
   uint16_t dummy[2]     = {0, 0};
 
   HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_RESET);
-  for(volatile int i=0; i<150; i++);
   HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)cmd_clear, (uint8_t*)dummy, 2, 100);
-  for(volatile int i=0; i<15; i++); 
   HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_SET);
   HAL_Delay(2);
 
   HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_RESET);
-  for(volatile int i=0; i<150; i++); // setup time
   HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)cmd_read, (uint8_t*)dummy, 2, 100);
-  for(volatile int i=0; i<15; i++); // hold time
   HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_SET);
   HAL_Delay(2);
 
   HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_RESET);
-  for(volatile int i=0; i<150; i++);
   HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)cmd_read, (uint8_t*)dummy, 2, 100);
-  for(volatile int i=0; i<15; i++);
   HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_SET);
   HAL_Delay(2);
 
@@ -261,7 +255,6 @@ int main(void)
   SCB_CleanDCache_by_Addr((uint32_t*)spi1_tx_buf, sizeof(spi1_tx_buf));
   enc_rot_X._last_raw_pos = (float)(dummy[0] & 0x3FFF) * (360.0f / 16384.0f);
   enc_rot_Y._last_raw_pos = (float)(dummy[1] & 0x3FFF) * (360.0f / 16384.0f);
-  
   
   /*
     ____  ____ ___ ____    ___       _ _   
