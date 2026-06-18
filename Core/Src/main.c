@@ -134,10 +134,6 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_DMA_Init();
-
-  // setting DELAY
-  HAL_Delay(500);
-
   MX_TIM2_Init();
   MX_TIM3_Init();
   MX_TIM5_Init();
