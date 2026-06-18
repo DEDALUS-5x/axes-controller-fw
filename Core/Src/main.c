@@ -231,41 +231,43 @@ int main(void)
   axis_C._enc_rot -> _offset = 0.0f;
   HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_2);
   
-  uint16_t cmd_clear[2] = {0x4001, 0x4001};
-  uint16_t cmd_read[2]  = {0xFFFF, 0xFFFF};
-  uint16_t dummy[2]     = {0, 0};
+  uint16_t cmd_clear = 0x4001;
+  uint16_t cmd_read  = 0xFFFF;
+  uint16_t dummy     = 0;
 
   HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_RESET);
-  HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)cmd_clear, (uint8_t*)dummy, 2, 100);
+  HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)&cmd_clear, (uint8_t*)&dummy, 1, 100);
   HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_SET);
   HAL_Delay(2);
-
   HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_RESET);
-  HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)cmd_read, (uint8_t*)dummy, 2, 100);
+  HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)&cmd_read, (uint8_t*)&dummy, 1, 100);
   HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_SET);
   HAL_Delay(2);
-
   HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_RESET);
-  HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)cmd_read, (uint8_t*)dummy, 2, 100);
+  HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)&cmd_read, (uint8_t*)&dummy, 1, 100);
   HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_SET);
   HAL_Delay(2);
-
   spi1_tx_buf[0] = 0xFFFF;
-  spi1_tx_buf[1] = 0xFFFF;
   SCB_CleanDCache_by_Addr((uint32_t*)spi1_tx_buf, sizeof(spi1_tx_buf));
-  enc_rot_X._last_raw_pos = (float)(dummy[0] & 0x3FFF) * (360.0f / 16384.0f);
-  enc_rot_Y._last_raw_pos = (float)(dummy[1] & 0x3FFF) * (360.0f / 16384.0f);
-  
-  /*
-    ____  ____ ___ ____    ___       _ _   
-   / ___||  _ \_ _|___ \  |_ _|_ __ (_) |_ 
-   \___ \| |_) | |  __) |  | || '_ \| | __|
-    ___) |  __/| | / __/   | || | | | | |_ 
-   |____/|_|  |___|_____| |___|_| |_|_|\__|
-                                           
-  */
-  HAL_SPI_Receive_DMA(&hspi2, (uint8_t*)spi2_rx_buf, 2);
 
+    HAL_GPIO_WritePin(SPI2_CSS_GPIO_Port, SPI2_CSS_Pin, GPIO_PIN_RESET);
+  HAL_SPI_TransmitReceive(&hspi2, (uint8_t*)&cmd_clear, (uint8_t*)&dummy, 1, 100);
+  HAL_GPIO_WritePin(SPI2_CSS_GPIO_Port, SPI2_CSS_Pin, GPIO_PIN_SET);
+  HAL_Delay(2);
+  HAL_GPIO_WritePin(SPI2_CSS_GPIO_Port, SPI2_CSS_Pin, GPIO_PIN_RESET);
+  HAL_SPI_TransmitReceive(&hspi2, (uint8_t*)&cmd_read, (uint8_t*)&dummy, 1, 100);
+  HAL_GPIO_WritePin(SPI2_CSS_GPIO_Port, SPI2_CSS_Pin, GPIO_PIN_SET);
+  HAL_Delay(2);
+  HAL_GPIO_WritePin(SPI2_CSS_GPIO_Port, SPI2_CSS_Pin, GPIO_PIN_RESET);
+  HAL_SPI_TransmitReceive(&hspi2, (uint8_t*)&cmd_read, (uint8_t*)&dummy, 1, 100);
+  HAL_GPIO_WritePin(SPI2_CSS_GPIO_Port, SPI2_CSS_Pin, GPIO_PIN_SET);
+  HAL_Delay(2);
+  spi2_tx_buf[0] = 0xFFFF;
+  SCB_CleanDCache_by_Addr((uint32_t*)spi2_tx_buf, sizeof(spi2_tx_buf));
+  
+  enc_rot_Y._last_raw_pos = (float)(dummy & 0x3FFF) * (360.0f / 16384.0f);
+  enc_rot_X._last_raw_pos = (float)(dummy & 0x3FFF) * (360.0f / 16384.0f);
+  
   /*
     ____  ____ ___ _____   ___       _ _   
    / ___||  _ \_ _|___ /  |_ _|_ __ (_) |_ 
@@ -307,11 +309,31 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  char serial_buf[128];
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+
+    /*
+    __disable_irq();
+    uint16_t raw_y = spi2_rx_buf[0];
+    float pos_y = enc_rot_X._converted_value;
+    __enable_irq();
+
+    // Check manuale degli errori per la stampa
+    char err_y = (raw_y & 0x4000) ? 'E' : 'O';
+
+    sprintf(serial_buf, "RAW Y[0]: 0x%04X (%c) | Pos Y: %d\r\n", 
+            raw_y, err_y, (int)pos_y);
+    
+    HAL_UART_Transmit(&huart1, (uint8_t*)serial_buf, strlen(serial_buf), 10);
+    
+    // Pausa di 100ms per non inondare la seriale (non blocca il TIM6 in background)
+    HAL_Delay(100);
+
+    */
   }
   /* USER CODE END 3 */
 }
