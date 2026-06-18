@@ -131,10 +131,13 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
           enc_lin_X._last_velocity = enc_lin_X._velocity;
           enc_lin_Y._last_converted_value = enc_lin_Y._converted_value;
           enc_lin_Y._last_velocity = enc_lin_Y._velocity;
-          // axis_X._pid_vel._setpoint = PID_compute_pos(&axis_X._pid_pos, enc_lin_X._converted_value, dt_pos) + axis_X._target_vel;
+
+          // PID pos
+          axis_X._pid_pos._setpoint = axis_X._target_pos;
+          axis_X._pid_vel._setpoint = PID_compute_pos(&axis_X._pid_pos, enc_lin_X._converted_value, dt_pos) + axis_X._target_vel;
           // axis_Y._pid_vel._setpoint = PID_compute_pos(&axis_Y._pid_pos, enc_lin_Y._converted_value, dt_pos) + axis_Y._target_vel;
-          axis_X._pid_vel._setpoint = axis_X._target_vel;
-          axis_Y._pid_vel._setpoint = axis_Y._target_vel;
+          // axis_X._pid_vel._setpoint = axis_X._target_vel;
+          // axis_Y._pid_vel._setpoint = axis_Y._target_vel;
 
           // Feedback packet to send to the raspi
           static uint32_t current_msg_id = 0;
