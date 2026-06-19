@@ -276,9 +276,14 @@ int main(void)
    |____/|_|  |___|____/  |___|_| |_|_|\__|
                                            
   */
-  spi3_tx_buf_active[0] = 0xBB; // Inizializza almeno lo start byte
-  HAL_SPI_TransmitReceive_DMA(&hspi3, spi3_tx_buf_active, spi3_rx_buf, sizeof(SPIPacket));
-
+  memset(spi3_tx_buf_active, 0, sizeof(spi3_tx_buf_active));
+  spi3_tx_buf_active[0] = 0xBB; 
+    SCB_CleanDCache_by_Addr((uint32_t*)spi3_tx_buf_active, sizeof(spi3_tx_buf_active));
+  SCB_CleanDCache_by_Addr((uint32_t*)spi3_rx_buf, sizeof(spi3_rx_buf));
+  if (HAL_SPI_TransmitReceive_DMA(&hspi3, spi3_tx_buf_active, spi3_rx_buf, sizeof(SPIPacket)) != HAL_OK) {
+      // Se fallisce l'avvio del DMA, accende i LED e si ferma per debug
+      Error_Handler();
+  }
   /*
     _     _____ ____        ____                       
    | |   | ____|  _ \ ___  |  _ \  __ _ _ __   ___ ___ 
@@ -299,7 +304,7 @@ int main(void)
 
   machine_state = RUN;
 
-  axis_X._target_pos = 50.0f;
+  axis_X._target_pos = -30.0f;
   axis_X._target_vel = 0.0f;
 
   // let's start bitches
@@ -309,12 +314,19 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  char serial_buf[128];
+   char serial_buf[128];
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+
+    if(axis_X._enc_lin->_converted_value < -29.0f){
+      axis_X._target_pos = 30.0f;
+    }
+    if(axis_X._enc_lin -> _converted_value > 29.0f){
+      axis_X._target_pos = -30.0f;
+    }
 
     /*
     __disable_irq();

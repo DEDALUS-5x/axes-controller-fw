@@ -102,12 +102,10 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : ES_Z1_Pin ES_Z2_Pin ES_Y2_Pin ES_Y1_Pin
-                           ES_X_Pin */
-  GPIO_InitStruct.Pin = ES_Z1_Pin|ES_Z2_Pin|ES_Y2_Pin|ES_Y1_Pin
-                          |ES_X_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  /*Configure GPIO pins : ES_Z1_Pin ES_Y1_Pin ES_X_Pin */
+  GPIO_InitStruct.Pin = ES_Z1_Pin|ES_Y1_Pin|ES_X_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
 
   /*Configure GPIO pin : SPI1_CSS_Pin */
@@ -119,6 +117,13 @@ void MX_GPIO_Init(void)
 
   /*AnalogSwitch Config */
   HAL_SYSCFG_AnalogSwitchConfig(SYSCFG_SWITCH_PC3, SYSCFG_SWITCH_PC3_CLOSE);
+
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI3_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI3_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
 }
 

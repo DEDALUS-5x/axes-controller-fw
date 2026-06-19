@@ -107,14 +107,13 @@ void Error_Handler(void);
 #define H_PWM_GPIO_Port GPIOD
 #define ES_Z1_Pin GPIO_PIN_3
 #define ES_Z1_GPIO_Port GPIOG
-#define ES_Z2_Pin GPIO_PIN_4
-#define ES_Z2_GPIO_Port GPIOG
-#define ES_Y2_Pin GPIO_PIN_5
-#define ES_Y2_GPIO_Port GPIOG
+#define ES_Z1_EXTI_IRQn EXTI3_IRQn
 #define ES_Y1_Pin GPIO_PIN_6
 #define ES_Y1_GPIO_Port GPIOG
+#define ES_Y1_EXTI_IRQn EXTI9_5_IRQn
 #define ES_X_Pin GPIO_PIN_7
 #define ES_X_GPIO_Port GPIOG
+#define ES_X_EXTI_IRQn EXTI9_5_IRQn
 #define MY2_IN1_Pin GPIO_PIN_6
 #define MY2_IN1_GPIO_Port GPIOC
 #define MY2_IN2_Pin GPIO_PIN_7
