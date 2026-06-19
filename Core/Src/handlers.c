@@ -202,15 +202,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
           HAL_GPIO_TogglePin(LED_1_GPIO_Port, LED_1_Pin);
         }
 
-        if(machine_state == RUN){
+        if(machine_state == HOMING || machine_state == RUN){
           PID_compute_vel(&axis_X, dt);
           PID_compute_vel(&axis_Y, dt);
-        }
-
-        if(machine_state == HOMING || machine_state == RUN){
-
           motor_command(&axis_X, &htim1, TIM_CHANNEL_1, TIM_CHANNEL_2);
           motor_command(&axis_Y, &htim1, TIM_CHANNEL_3, TIM_CHANNEL_4);
+          
         } else{
 
           __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 0);
