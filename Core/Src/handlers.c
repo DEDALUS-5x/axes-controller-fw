@@ -387,7 +387,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
     __HAL_TIM_SET_COMPARE(&htim15, TIM_CHANNEL_1, 0);
     __HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_2, 0);
 
-    while(1); // required power cycle. The endstop interrupts have the higher priority
+    machine_state = INIT;
+    // while(1); // required power cycle. The endstop interrupts have the higher priority
   }
 
 }
