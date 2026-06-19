@@ -150,7 +150,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
           // PID pos
           axis_X._pid_pos._setpoint = axis_X._target_pos;
-          axis_X._pid_vel._setpoint = PID_compute_pos(&axis_X._pid_pos, enc_lin_X._converted_value, dt_pos) + axis_X._target_vel;
+          axis_X._pid_vel._setpoint = -PID_compute_pos(&axis_X._pid_pos, enc_lin_X._converted_value, dt_pos) + axis_X._target_vel;
           // axis_Y._pid_vel._setpoint = PID_compute_pos(&axis_Y._pid_pos, enc_lin_Y._converted_value, dt_pos) + axis_Y._target_vel;
           // axis_X._pid_vel._setpoint = axis_X._target_vel;
           // axis_Y._pid_vel._setpoint = axis_Y._target_vel;
