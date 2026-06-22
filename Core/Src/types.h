@@ -66,13 +66,6 @@ typedef struct {
 
 } Stepper;
 
-typedef struct {
-    float target_pos[3];    // X, Y1, Y2
-    float target_rot[2];
-    float velocity[3];
-    float acceleration[3];
-} ProfileCMD;
-
 #pragma pack(push, 1)
 
 // Full duplex communication with raspberry: 96 bytes
