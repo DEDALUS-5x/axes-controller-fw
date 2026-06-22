@@ -53,12 +53,6 @@
 /* USER CODE BEGIN PV */
 /* USER CODE BEGIN PV */
 
-// --- VARIABILI DI DEBUG ---
-volatile uint16_t debug_raw_spi = 0;      
-volatile uint16_t debug_angle_14b = 0;    
-volatile float debug_angle_deg = 0.0f;    
-// --------------------------
-
 uint16_t spi1_rx_buf[16] __attribute__((section(".dma_buffer"), aligned(32))); // Z1, A, C
 uint16_t spi1_tx_buf[16] __attribute__((section(".dma_buffer"), aligned(32)));
 uint16_t spi2_rx_buf[16] __attribute__((section(".dma_buffer"), aligned(32))); // X, Y
@@ -70,16 +64,14 @@ uint8_t spi3_tx_buf_active[sizeof(SPIPacket)] __attribute__((section(".dma_buffe
 uint8_t spi3_tx_buf_staging[sizeof(SPITxPacket)] __attribute__((section(".dma_buffer"), aligned(32)));
 
 uint16_t spi4_single_buf[16] __attribute__((section(".dma_buffer"), aligned(32)));
-uint8_t machine_state = INIT;
 
 volatile uint8_t current_axis_idx = 0; 
 float current_values[3];
 
+uint8_t machine_state = INIT;
 Axis axis_X, axis_Y;
 Stepper axis_Z, axis_A, axis_C;
-
 Encoder enc_rot_X, enc_rot_Y, enc_rot_Z, enc_rot_A, enc_rot_C, enc_rot_F;
-
 Encoder enc_lin_X, enc_lin_Y;
 
 
