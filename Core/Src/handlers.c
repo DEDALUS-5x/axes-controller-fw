@@ -264,9 +264,9 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
     SCB_InvalidateDCache_by_Addr((uint32_t *)spi3_rx_buf, sizeof(spi3_rx_buf));
     memcpy(&packet, spi3_rx_buf, sizeof(SPIPacket));
 
-    memcpy(spi3_tx_buf_active, spi3_tx_buf_staging, sizeof(SPITxPacket));
-    SCB_CleanDCache_by_Addr((uint32_t *)spi3_tx_buf_active, sizeof(SPITxPacket));
-    HAL_SPI_TransmitReceive_DMA(&hspi3, spi3_tx_buf_active, spi3_rx_buf, sizeof(SPIPacket));
+    // memcpy(spi3_tx_buf_active, spi3_tx_buf_staging, sizeof(SPITxPacket));
+    // SCB_CleanDCache_by_Addr((uint32_t *)spi3_tx_buf_active, sizeof(SPITxPacket));
+    // HAL_SPI_TransmitReceive_DMA(&hspi3, spi3_tx_buf_active, spi3_rx_buf, sizeof(SPIPacket));
 
     if (packet.start == 0xAA) {
       machine_state = RUN;
@@ -295,8 +295,16 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
       // motors command already embedded in tim6 handler. just keep a constnat pid output (pid disabled)
     }
 
+    memcpy(spi3_tx_buf_active, spi3_tx_buf_staging, sizeof(SPITxPacket));
+    SCB_CleanDCache_by_Addr((uint32_t *)spi3_tx_buf_active, sizeof(SPITxPacket));
+    // clena errors and restart DMA
+    __HAL_SPI_CLEAR_OVRFLAG(&hspi3); 
+    __HAL_SPI_CLEAR_FREFLAG(&hspi3);
+    HAL_SPI_TransmitReceive_DMA(&hspi3, spi3_tx_buf_active, spi3_rx_buf, sizeof(SPIPacket));
+
   }
 }
+
 
 /*
   _____           _   ____  _                  

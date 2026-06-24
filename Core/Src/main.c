@@ -162,7 +162,7 @@ int main(void)
   axis_X._enc_lin = &enc_lin_X;
   axis_X._pwm_register = &TIM1->CCR1;
   axis_X._enc_rot -> _offset = 0.0f;
-  PID_init(&axis_X._pid_pos, 100.0f, 0.01f, 0.001f, 5.0f); // 300mm/min -> 5mm/s
+  PID_init(&axis_X._pid_pos, 100.0f, 0.01f, 0.001f, 200.0f); // 300mm/min -> 5mm/s
   PID_init(&axis_X._pid_vel, 40.0f, 0.01f, 0.001f, 10000.0f);
   HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_ALL);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1); 
@@ -296,7 +296,7 @@ int main(void)
 
   machine_state = RUN;
 
-  axis_X._target_pos = -30.0f;
+  axis_X._target_pos = 0.0f;
   axis_X._target_vel = 0.0f;
 
   // let's start bitches
@@ -306,31 +306,33 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-   char serial_buf[128];
+  // char serial_buf[128];
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
 
+    /*
     if(axis_X._enc_lin->_converted_value < -29.0f){
       axis_X._target_pos = 30.0f;
     }
     if(axis_X._enc_lin -> _converted_value > 29.0f){
       axis_X._target_pos = -30.0f;
     }
+      */
 
     /*
-    __disable_irq();
-    uint16_t raw_y = spi2_rx_buf[0];
-    float pos_y = enc_rot_X._converted_value;
-    float pos_lin = enc_lin_X._converted_value;
+        __disable_irq();
+    // uint16_t raw_y = spi2_rx_buf[0];
+    float pos_y = axis_X._target_pos;
+    float pos_lin = axis_X._pid_pos._setpoint;
     __enable_irq();
 
-    char err_y = (raw_y & 0x4000) ? 'E' : 'O';
+    // char err_y = (raw_y & 0x4000) ? 'E' : 'O';
 
-    sprintf(serial_buf, "RAW Y[0]: 0x%04X (%c) | Pos Y: %d | LIN Y: %d\r\n", 
-            raw_y, err_y, (int)pos_y, (int)pos_lin);
+    sprintf(serial_buf, "targetppos: %d | pidsetpoint: %d\r\n", (int)pos_y, (int)pos_lin);
+    // sprintf(serial_buf, "RAW Y[0]: 0x%04X (%c) | Pos Y: %d | LIN Y: %d\r\n", raw_y, err_y, (int)pos_y, (int)pos_lin);
     
     HAL_UART_Transmit(&huart1, (uint8_t*)serial_buf, strlen(serial_buf), 10);
     HAL_Delay(100);
