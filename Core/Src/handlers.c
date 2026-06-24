@@ -281,14 +281,10 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
 
     HAL_GPIO_WritePin(SPI4_CSS_GPIO_Port, SPI4_CSS_Pin, GPIO_PIN_SET);
     SCB_InvalidateDCache_by_Addr((uint32_t *)spi4_rx_buf, sizeof(spi4_rx_buf));
-
-    // Se anche solo UNO degli encoder in catena segnala errore, ripuliamo l'intera catena al giro dopo
     if ((spi4_rx_buf[0] & 0x4000) || (spi4_rx_buf[1] & 0x4000) || (spi4_rx_buf[2] & 0x4000)) {
         spi4_need_clear = 1;
     } else {
-        // ASSUNZIONE CABLAGGIO: Scheda -> Z -> A -> C.
-        // Se il cablaggio è questo, i pacchetti escono in ordine inverso: C, poi A, poi Z.
-        // Se il tuo cablaggio fisico è diverso, inverti l'ordine degli indici!
+        // ASSUNZIONE CABLAGGIO: Scheda -> Z -> A -> C
         update_rotary_encoder(&enc_rot_C, spi4_rx_buf[0], 0.0001f);
         update_rotary_encoder(&enc_rot_A, spi4_rx_buf[1], 0.0001f);
         update_rotary_encoder(&enc_rot_Z, spi4_rx_buf[2], 0.0001f);
