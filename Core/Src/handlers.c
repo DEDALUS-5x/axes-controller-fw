@@ -18,6 +18,7 @@ static uint8_t homing_counter = 0;
 
 static volatile uint8_t spi1_need_clear = 0;
 static volatile uint8_t spi2_need_clear = 0;
+static volatile uint8_t spi4_need_clear = 0;
 
 void update_rotary_encoder(Encoder *enc, uint16_t raw_spi, float dt){
 
@@ -101,6 +102,25 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
             HAL_GPIO_WritePin(SPI2_CSS_GPIO_Port, SPI2_CSS_Pin, GPIO_PIN_SET);
         }
 
+        __HAL_SPI_CLEAR_OVRFLAG(&hspi4);
+        if (spi4_need_clear) {
+            spi4_tx_buf[0] = 0x4001;
+            spi4_tx_buf[1] = 0x4001;
+            spi4_tx_buf[2] = 0x4001;
+            spi4_need_clear = 0;
+        } else {
+            spi4_tx_buf[0] = 0xFFFF;
+            spi4_tx_buf[1] = 0xFFFF;
+            spi4_tx_buf[2] = 0xFFFF;
+        }
+        SCB_CleanDCache_by_Addr((uint32_t*)spi4_tx_buf, sizeof(spi4_tx_buf));
+        
+        HAL_GPIO_WritePin(SPI4_CSS_GPIO_Port, SPI4_CSS_Pin, GPIO_PIN_RESET);
+        if (HAL_SPI_TransmitReceive_DMA(&hspi4, (uint8_t*)spi4_tx_buf, (uint8_t*)spi4_rx_buf, 3) != HAL_OK) {
+            HAL_GPIO_WritePin(SPI4_CSS_GPIO_Port, SPI4_CSS_Pin, GPIO_PIN_SET);
+        }
+
+        // Move steppers
         if (machine_state == HOMING || machine_state == RUN) {
             stepper_loop(&axis_Z, &htim4, TIM_CHANNEL_4, DIR_Z1_GPIO_Port, DIR_Z1_Pin, 20.0f, 5.0f);
             stepper_loop(&axis_A, &htim15, TIM_CHANNEL_1, DIR_P1_GPIO_Port, DIR_P1_Pin, 20.0, 5.0f);
@@ -254,6 +274,24 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
         spi2_need_clear = 1;
     } else {
         update_rotary_encoder(&enc_rot_X, spi2_rx_buf[0], 0.0001f);
+    }
+  }
+
+  else if(hspi -> Instance == SPI4){
+
+    HAL_GPIO_WritePin(SPI4_CSS_GPIO_Port, SPI4_CSS_Pin, GPIO_PIN_SET);
+    SCB_InvalidateDCache_by_Addr((uint32_t *)spi4_rx_buf, sizeof(spi4_rx_buf));
+
+    // Se anche solo UNO degli encoder in catena segnala errore, ripuliamo l'intera catena al giro dopo
+    if ((spi4_rx_buf[0] & 0x4000) || (spi4_rx_buf[1] & 0x4000) || (spi4_rx_buf[2] & 0x4000)) {
+        spi4_need_clear = 1;
+    } else {
+        // ASSUNZIONE CABLAGGIO: Scheda -> Z -> A -> C.
+        // Se il cablaggio è questo, i pacchetti escono in ordine inverso: C, poi A, poi Z.
+        // Se il tuo cablaggio fisico è diverso, inverti l'ordine degli indici!
+        update_rotary_encoder(&enc_rot_C, spi4_rx_buf[0], 0.0001f);
+        update_rotary_encoder(&enc_rot_A, spi4_rx_buf[1], 0.0001f);
+        update_rotary_encoder(&enc_rot_Z, spi4_rx_buf[2], 0.0001f);
     }
   }
 

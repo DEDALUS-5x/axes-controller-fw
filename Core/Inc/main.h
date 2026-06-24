@@ -65,8 +65,8 @@ void Error_Handler(void);
 #define SPI4_CSS_X_GPIO_Port GPIOC
 #define SPI4_CSS_Y1_Pin GPIO_PIN_14
 #define SPI4_CSS_Y1_GPIO_Port GPIOC
-#define SPI4_CSS_Y2_Pin GPIO_PIN_15
-#define SPI4_CSS_Y2_GPIO_Port GPIOC
+#define SPI4_CSS_Pin GPIO_PIN_15
+#define SPI4_CSS_GPIO_Port GPIOC
 #define SPI2_CSS_Pin GPIO_PIN_3
 #define SPI2_CSS_GPIO_Port GPIOC
 #define MY1_A_Pin GPIO_PIN_0

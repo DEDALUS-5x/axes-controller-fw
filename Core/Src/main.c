@@ -53,17 +53,19 @@
 /* USER CODE BEGIN PV */
 /* USER CODE BEGIN PV */
 
-uint16_t spi1_rx_buf[16] __attribute__((section(".dma_buffer"), aligned(32))); // Z1, A, C
+uint16_t spi1_rx_buf[16] __attribute__((section(".dma_buffer"), aligned(32))); // X
 uint16_t spi1_tx_buf[16] __attribute__((section(".dma_buffer"), aligned(32)));
-uint16_t spi2_rx_buf[16] __attribute__((section(".dma_buffer"), aligned(32))); // X, Y
+uint16_t spi2_rx_buf[16] __attribute__((section(".dma_buffer"), aligned(32))); // Y
 uint16_t spi2_tx_buf[16] __attribute__((section(".dma_buffer"), aligned(32)));
+uint16_t spi4_rx_buf[16] __attribute__((section(".dma_buffer"), aligned(32))); // Z A C
+uint16_t spi4_tx_buf[16] __attribute__((section(".dma_buffer"), aligned(32)));
 
 uint8_t spi3_rx_buf[sizeof(SPIPacket)] __attribute__((section(".dma_buffer"), aligned(32))); // from raspi
   // Raspberry SPI3
 uint8_t spi3_tx_buf_active[sizeof(SPIPacket)] __attribute__((section(".dma_buffer"), aligned(32)));
 uint8_t spi3_tx_buf_staging[sizeof(SPITxPacket)] __attribute__((section(".dma_buffer"), aligned(32)));
 
-uint16_t spi4_single_buf[16] __attribute__((section(".dma_buffer"), aligned(32)));
+// uint16_t spi4_single_buf[16] __attribute__((section(".dma_buffer"), aligned(32)));
 
 volatile uint8_t current_axis_idx = 0; 
 float current_values[3];
@@ -227,6 +229,14 @@ int main(void)
   uint16_t cmd_read  = 0xFFFF;
   uint16_t dummy     = 0;
 
+  /*
+    ____  ____ ___ _   ___       _ _   
+   / ___||  _ \_ _/ | |_ _|_ __ (_) |_ 
+   \___ \| |_) | || |  | || '_ \| | __|
+    ___) |  __/| || |  | || | | | | |_ 
+   |____/|_|  |___|_| |___|_| |_|_|\__|
+                                       
+  */
   HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_RESET);
   HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)&cmd_clear, (uint8_t*)&dummy, 1, 100);
   HAL_GPIO_WritePin(SPI1_CSS_GPIO_Port, SPI1_CSS_Pin, GPIO_PIN_SET);
@@ -242,6 +252,14 @@ int main(void)
   spi1_tx_buf[0] = 0xFFFF;
   SCB_CleanDCache_by_Addr((uint32_t*)spi1_tx_buf, sizeof(spi1_tx_buf));
 
+  /*
+    ____  ____ ___ ____    ___       _ _   
+   / ___||  _ \_ _|___ \  |_ _|_ __ (_) |_ 
+   \___ \| |_) | |  __) |  | || '_ \| | __|
+    ___) |  __/| | / __/   | || | | | | |_ 
+   |____/|_|  |___|_____| |___|_| |_|_|\__|
+                                           
+  */
     HAL_GPIO_WritePin(SPI2_CSS_GPIO_Port, SPI2_CSS_Pin, GPIO_PIN_RESET);
   HAL_SPI_TransmitReceive(&hspi2, (uint8_t*)&cmd_clear, (uint8_t*)&dummy, 1, 100);
   HAL_GPIO_WritePin(SPI2_CSS_GPIO_Port, SPI2_CSS_Pin, GPIO_PIN_SET);
@@ -276,6 +294,39 @@ int main(void)
       // Se fallisce l'avvio del DMA, accende i LED e si ferma per debug
       Error_Handler();
   }
+
+  /*
+    ____  ____ ___ _  _     ___       _ _   
+   / ___||  _ \_ _| || |   |_ _|_ __ (_) |_ 
+   \___ \| |_) | || || |_   | || '_ \| | __|
+    ___) |  __/| ||__   _|  | || | | | | |_ 
+   |____/|_|  |___|  |_|   |___|_| |_|_|\__|
+                                            
+  */
+  uint16_t cmd_clear_3[3] = {0x4001, 0x4001, 0x4001};
+  uint16_t cmd_read_3[3]  = {0xFFFF, 0xFFFF, 0xFFFF};
+  uint16_t dummy_3[3]     = {0, 0, 0};
+  HAL_GPIO_WritePin(SPI4_CSS_GPIO_Port, SPI4_CSS_Pin, GPIO_PIN_RESET);
+  HAL_SPI_TransmitReceive(&hspi4, (uint8_t*)cmd_clear_3, (uint8_t*)dummy_3, 3, 100);
+  HAL_GPIO_WritePin(SPI4_CSS_GPIO_Port, SPI4_CSS_Pin, GPIO_PIN_SET);
+  HAL_Delay(2);
+  HAL_GPIO_WritePin(SPI4_CSS_GPIO_Port, SPI4_CSS_Pin, GPIO_PIN_RESET);
+  HAL_SPI_TransmitReceive(&hspi4, (uint8_t*)cmd_read_3, (uint8_t*)dummy_3, 3, 100);
+  HAL_GPIO_WritePin(SPI4_CSS_GPIO_Port, SPI4_CSS_Pin, GPIO_PIN_SET);
+  HAL_Delay(2);
+  HAL_GPIO_WritePin(SPI4_CSS_GPIO_Port, SPI4_CSS_Pin, GPIO_PIN_RESET);
+  HAL_SPI_TransmitReceive(&hspi4, (uint8_t*)cmd_read_3, (uint8_t*)dummy_3, 3, 100);
+  HAL_GPIO_WritePin(SPI4_CSS_GPIO_Port, SPI4_CSS_Pin, GPIO_PIN_SET);
+  HAL_Delay(2);
+  spi4_tx_buf[0] = 0xFFFF;
+  spi4_tx_buf[1] = 0xFFFF;
+  spi4_tx_buf[2] = 0xFFFF;
+  SCB_CleanDCache_by_Addr((uint32_t*)spi4_tx_buf, sizeof(spi4_tx_buf));
+  enc_rot_C._last_raw_pos = (float)(dummy_3[0] & 0x3FFF) * (360.0f / 16384.0f);
+  enc_rot_A._last_raw_pos = (float)(dummy_3[1] & 0x3FFF) * (360.0f / 16384.0f);
+  enc_rot_Z._last_raw_pos = (float)(dummy_3[2] & 0x3FFF) * (360.0f / 16384.0f);
+
+
   /*
     _     _____ ____        ____                       
    | |   | ____|  _ \ ___  |  _ \  __ _ _ __   ___ ___ 
@@ -306,7 +357,7 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  // char serial_buf[128];
+  char serial_buf[128];
   while (1)
   {
     /* USER CODE END WHILE */
@@ -322,21 +373,20 @@ int main(void)
     }
       */
 
-    /*
-        __disable_irq();
+    __disable_irq();
     // uint16_t raw_y = spi2_rx_buf[0];
-    float pos_y = axis_X._target_pos;
-    float pos_lin = axis_X._pid_pos._setpoint;
+    float pos_y = enc_rot_Y._converted_value;
+    float pos_x = enc_rot_X._converted_value;
     __enable_irq();
 
     // char err_y = (raw_y & 0x4000) ? 'E' : 'O';
 
-    sprintf(serial_buf, "targetppos: %d | pidsetpoint: %d\r\n", (int)pos_y, (int)pos_lin);
+    sprintf(serial_buf, "pos_y: %d | pos_x: %d\r\n", (int)pos_y, (int)pos_x);
     // sprintf(serial_buf, "RAW Y[0]: 0x%04X (%c) | Pos Y: %d | LIN Y: %d\r\n", raw_y, err_y, (int)pos_y, (int)pos_lin);
     
     HAL_UART_Transmit(&huart1, (uint8_t*)serial_buf, strlen(serial_buf), 10);
     HAL_Delay(100);
-    */
+
 
   }
   /* USER CODE END 3 */
