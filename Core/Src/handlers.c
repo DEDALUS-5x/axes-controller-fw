@@ -149,14 +149,14 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
           const float dt_pos = 0.001f;
 
           // X
-          enc_lin_X._converted_value = (float)((int32_t)TIM2 -> CNT) * 0.01f;
+          enc_lin_X._converted_value = - (float)((int32_t)TIM2 -> CNT) * 0.01f;
           float inst_vel_x = (enc_lin_X._converted_value - enc_lin_X._last_converted_value) / dt_pos;
           enc_lin_X._velocity = (enc_lin_X._velocity * 0.8f) + (inst_vel_x * 0.2f);
           float inst_acc_x = (enc_lin_X._velocity - enc_lin_X._last_velocity) / dt_pos;
           enc_lin_X._acceleration = (enc_lin_X._acceleration * 0.8f) + (inst_acc_x * 0.2f);
 
           // Y
-          enc_lin_Y._converted_value = (float)((int32_t)TIM5 -> CNT) * 0.01f;        
+          enc_lin_Y._converted_value = - (float)((int32_t)TIM5 -> CNT) * 0.01f;        
           float inst_vel_y = (enc_lin_Y._converted_value - enc_lin_Y._last_converted_value) / dt_pos;
           enc_lin_Y._velocity = (enc_lin_Y._velocity * 0.8f) + (inst_vel_y * 0.2f);
           float inst_acc_y = (enc_lin_Y._velocity - enc_lin_Y._last_velocity) / dt_pos;
