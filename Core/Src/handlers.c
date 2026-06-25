@@ -74,7 +74,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
                                  
         */
 
-        const float dt = 0.0001f;
+        const float dt = IN_PERIOD;
 
         __HAL_SPI_CLEAR_OVRFLAG(&hspi1);
         if (spi1_need_clear) {
@@ -146,7 +146,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
           */
 
           pid_counter = 0;
-          const float dt_pos = 0.001f;
+          const float dt_pos = OUT_PERIOD;
 
           // X
           enc_lin_X._converted_value = - (float)((int32_t)TIM2 -> CNT) * 0.01f;
@@ -171,9 +171,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
           // PID pos
           axis_X._pid_pos._setpoint = axis_X._target_pos;
           axis_X._pid_vel._setpoint = -PID_compute_pos(&axis_X._pid_pos, enc_lin_X._converted_value, dt_pos) + axis_X._target_vel;
-          // axis_Y._pid_vel._setpoint = PID_compute_pos(&axis_Y._pid_pos, enc_lin_Y._converted_value, dt_pos) + axis_Y._target_vel;
-          // axis_X._pid_vel._setpoint = axis_X._target_vel;
-          // axis_Y._pid_vel._setpoint = axis_Y._target_vel;
+          axis_Y._pid_vel._setpoint = PID_compute_pos(&axis_Y._pid_pos, enc_lin_Y._converted_value, dt_pos) + axis_Y._target_vel;
+          axis_X._pid_vel._setpoint = axis_X._target_vel;
+          axis_Y._pid_vel._setpoint = axis_Y._target_vel;
 
           // Feedback packet to send to the raspi
           static uint32_t current_msg_id = 0;
@@ -260,7 +260,7 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
     if (spi1_rx_buf[0] & 0x4000) {
         spi1_need_clear = 1;
     } else {
-        update_rotary_encoder(&enc_rot_Y, spi1_rx_buf[0], 0.0001f);
+        update_rotary_encoder(&enc_rot_Y, spi1_rx_buf[0], IN_PERIOD);
     }
     
   }
@@ -273,7 +273,7 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
     if (spi2_rx_buf[0] & 0x4000) {
         spi2_need_clear = 1;
     } else {
-        update_rotary_encoder(&enc_rot_X, spi2_rx_buf[0], 0.0001f);
+        update_rotary_encoder(&enc_rot_X, spi2_rx_buf[0], IN_PERIOD);
     }
   }
 
@@ -285,9 +285,9 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
         spi4_need_clear = 1;
     } else {
         // ASSUNZIONE CABLAGGIO: Scheda -> Z -> A -> C
-        update_rotary_encoder(&enc_rot_C, spi4_rx_buf[0], 0.0001f);
-        update_rotary_encoder(&enc_rot_A, spi4_rx_buf[1], 0.0001f);
-        update_rotary_encoder(&enc_rot_Z, spi4_rx_buf[2], 0.0001f);
+        update_rotary_encoder(&enc_rot_C, spi4_rx_buf[0], IN_PERIOD);
+        update_rotary_encoder(&enc_rot_A, spi4_rx_buf[1], IN_PERIOD);
+        update_rotary_encoder(&enc_rot_Z, spi4_rx_buf[2], IN_PERIOD);
     }
   }
 
