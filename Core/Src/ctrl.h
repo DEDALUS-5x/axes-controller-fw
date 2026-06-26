@@ -63,7 +63,7 @@ void motor_command(Axis *axis, TIM_HandleTypeDef *htim, uint32_t channel1, uint3
  * @param dir GPIO port for the DIR pin
  * @param dir_pin GPIO pin for the DIR pin
  */
-void stepper_command(float speed, TIM_HandleTypeDef *htim, uint32_t channel, GPIO_TypeDef *dir_port, uint16_t dir_pin);
+void stepper_command(float speed, float steps_per_unit, TIM_HandleTypeDef *htim, uint32_t channel, GPIO_TypeDef *dir_port, uint16_t dir_pin);
 
 /**
  * 

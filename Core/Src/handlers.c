@@ -50,7 +50,18 @@ void update_rotary_encoder(Encoder *enc, uint16_t raw_spi, float dt){
   enc -> _last_velocity = enc -> _velocity;
 }
 
+float get_pwm_angle(TIM_HandleTypeDef *htim) {
+    uint32_t period = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);
+    uint32_t duty   = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2);
+    
+    if (period == 0) return 0.0f; 
+    float duty_cycle = (float)duty / (float)period;
+    float angle = (duty_cycle - 0.0416f) * (360.0f / (0.9583f - 0.0416f));
+    if (angle < 0.0f) angle = 0.0f;
+    if (angle > 360.0f) angle = 360.0f;
 
+    return angle;
+}
 
 /*
   ____            _   _____ _                
@@ -101,20 +112,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
             HAL_GPIO_WritePin(SPI2_CSS_GPIO_Port, SPI2_CSS_Pin, GPIO_PIN_SET);
         }
 
-        // Move steppers
-        if (machine_state == HOMING || machine_state == RUN) {
-            stepper_loop(&axis_Z, &htim4, TIM_CHANNEL_4, DIR_Z1_GPIO_Port, DIR_Z1_Pin, 20.0f, 5.0f);
-            stepper_loop(&axis_A, &htim15, TIM_CHANNEL_1, DIR_P1_GPIO_Port, DIR_P1_Pin, 20.0, 5.0f);
-            stepper_loop(&axis_C, &htim8, TIM_CHANNEL_2, DIR_Y_GPIO_Port, DIR_Y_Pin, 20.0, 5.0f);
-
-        } else {
-            axis_Z._target = enc_rot_Z._converted_value;
-            
-            __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_4, 0);
-            axis_A._current_speed_hz = 0.0f;
-            axis_C._current_speed_hz = 0.0f;
-        }
-
         if(++pid_counter >= 10){
 
           /*
@@ -156,6 +153,21 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
           axis_X._pid_vel._setpoint = axis_X._target_vel;
           axis_Y._pid_vel._setpoint = axis_Y._target_vel;
 
+          // positioning axes
+          enc_rot_A._converted_value = get_pwm_angle(&htim4);
+          enc_rot_C._converted_value = get_pwm_angle(&htim23);
+          enc_rot_Z._converted_value += (axis_Z._current_speed_hz * dt_pos);
+          if (machine_state == HOMING || machine_state == RUN) {
+              stepper_loop(&axis_Z, &htim17, TIM_CHANNEL_1, DIR_Z1_GPIO_Port, DIR_Z1_Pin, 20.0f, 5.0f);
+              stepper_loop(&axis_A, &htim15, TIM_CHANNEL_1, DIR_P1_GPIO_Port, DIR_P1_Pin, 20.0f, 5.0f);
+              stepper_loop(&axis_C, &htim8, TIM_CHANNEL_2, DIR_Y_GPIO_Port, DIR_Y_Pin, 20.0f, 5.0f);
+          } else {
+              axis_Z._target = enc_rot_Z._converted_value;
+              __HAL_TIM_SET_COMPARE(&htim17, TIM_CHANNEL_1, 0);
+              axis_A._current_speed_hz = 0.0f;
+              axis_C._current_speed_hz = 0.0f;
+          }
+
           // Feedback packet to send to the raspi
           static uint32_t current_msg_id = 0;
           SPITxPacket tx_packet;
@@ -170,12 +182,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
           tx_packet.c = enc_rot_C._converted_value;
           tx_packet.vx = enc_lin_X._velocity;
           tx_packet.vy = enc_lin_Y._velocity;
-          tx_packet.vz = enc_rot_Z._velocity * 8.0f / 360.0f;
+          tx_packet.vz = axis_Z._current_speed_hz * 8.0f / 360.0f;
           tx_packet.va = enc_rot_A._velocity;
           tx_packet.vc = enc_rot_C._velocity;
           tx_packet.ax = enc_lin_X._acceleration;
           tx_packet.ay = enc_lin_Y._acceleration;
-          tx_packet.az = enc_rot_Z._acceleration;
+          tx_packet.az = 0.0f; // enc_rot_Z._acceleration;
           tx_packet.aa = enc_rot_A._acceleration;
           tx_packet.ac = enc_rot_C._acceleration;
 
@@ -368,13 +380,14 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 
       homing_counter++;
 
-      __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_4, 0);
+      __HAL_TIM_SET_COMPARE(&htim17, TIM_CHANNEL_1, 0);
 
-      enc_rot_Z._offset = (enc_rot_Z._turns * 360.0f) + enc_rot_Z._last_raw_pos;
+      enc_rot_Z._offset = 0.0f;
       enc_rot_Z._turns = 0;
       enc_rot_Z._converted_value = 0.0f;
 
       axis_Z._target = 0.0f;
+      axis_Z._current_speed_hz = 0.0f;
     }
 
     if(homing_counter == 3){

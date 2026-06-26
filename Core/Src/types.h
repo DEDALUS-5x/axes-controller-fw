@@ -12,8 +12,6 @@
 #ifndef __TYPES_H__
 #define __TYPES_H__
 
-#define STEPS_MM 10
-
 // PID struct
 typedef struct {
     float _kp, _ki, _kd;
@@ -61,6 +59,7 @@ typedef struct {
     Encoder *_enc_rot;
     float _target;
 
+    float steps_per_unit;
     float _current_speed_hz;
     float _accumulator;
 

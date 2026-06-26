@@ -110,11 +110,11 @@ void motor_command(Axis *axis, TIM_HandleTypeDef *htim, uint32_t channel1, uint3
 */
 
 
-void stepper_command(float speed, TIM_HandleTypeDef *htim, uint32_t channel, GPIO_TypeDef *dir_port, uint16_t dir_pin) {
+void stepper_command(float speed, float steps_per_unit, TIM_HandleTypeDef *htim, uint32_t channel, GPIO_TypeDef *dir_port, uint16_t dir_pin) {
     
     HAL_GPIO_WritePin(dir_port, dir_pin, (speed >= 0.0f) ? GPIO_PIN_RESET : GPIO_PIN_SET);
 
-    float freq = fabsf(speed) * STEPS_MM;
+    float freq = fabsf(speed) * steps_per_unit;
 
     if (freq < 0.5f) {
         __HAL_TIM_SET_COMPARE(htim, channel, 0); 
@@ -123,8 +123,6 @@ void stepper_command(float speed, TIM_HandleTypeDef *htim, uint32_t channel, GPI
 
 
     uint32_t timer_base_clock;
-    
-
     if (htim->Instance == TIM1 || htim->Instance == TIM8 || htim->Instance == TIM15 || 
         htim->Instance == TIM16 || htim->Instance == TIM17) {
         timer_base_clock = HAL_RCC_GetPCLK2Freq() * 2; // APB2 x2 on H7
@@ -158,9 +156,9 @@ void stepper_command(float speed, TIM_HandleTypeDef *htim, uint32_t channel, GPI
 
 void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, GPIO_TypeDef *dir_port, uint16_t dir_pin, float max_speed, float kp) {
 
-  float current_pos = stepper->_enc_rot->_converted_value;
+  float current_pos = stepper -> _enc_rot -> _converted_value;
 
-  float error = stepper->_target - current_pos;
+  float error = stepper -> _target - current_pos;
 
   float required_speed = error * kp;
 
@@ -168,12 +166,14 @@ void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, G
   if (required_speed < -max_speed) required_speed = -max_speed;
 
   // tolerance as function of the speed in order to avoid vibrations
-  float tolerance = (stepper->_current_speed_hz == 0.0f) ? 0.6f : 0.15f; 
+  float tolerance = (stepper -> _current_speed_hz == 0.0f) ? 0.6f : 0.15f; 
   if (fabsf(error) < tolerance) {
-      stepper_command(0.0f, htim, channel, dir_port, dir_pin);
-      stepper->_current_speed_hz = 0.0f; // stop
+      stepper_command(0.0f, stepper -> steps_per_unit, htim, channel, dir_port, dir_pin);
+      stepper -> _current_speed_hz = 0.0f; // stop
       return; 
   }
 
-  stepper_command(required_speed, htim, channel, dir_port, dir_pin);
+  stepper -> _current_speed_hz = required_speed;
+
+  stepper_command(required_speed, stepper -> steps_per_unit, htim, channel, dir_port, dir_pin);
 }

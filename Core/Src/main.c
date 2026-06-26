@@ -197,7 +197,8 @@ int main(void)
   */
   axis_Z._enc_rot = &enc_rot_Z;
   axis_Z._enc_rot -> _offset = 0.0f;
-  HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4); 
+  axis_Z.steps_per_unit = 400.0f;
+  HAL_TIM_PWM_Start(&htim17, TIM_CHANNEL_1); 
 
   /*
        _         _          _     
@@ -209,7 +210,10 @@ int main(void)
   */
   axis_A._enc_rot = &enc_rot_A;
   axis_A._enc_rot -> _offset = 0.0f;
+  axis_A.steps_per_unit = 8.888889f;
   HAL_TIM_PWM_Start(&htim15, TIM_CHANNEL_1);
+  HAL_TIM_IC_Start(&htim4, TIM_CHANNEL_1); // period
+  HAL_TIM_IC_Start(&htim4, TIM_CHANNEL_2); // duty
 
   /*
      ____      _          _     
@@ -221,7 +225,15 @@ int main(void)
   */
   axis_C._enc_rot = &enc_rot_C;
   axis_C._enc_rot -> _offset = 0.0f;
+  axis_C.steps_per_unit = 8.888889f;
   HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_2);
+  HAL_TIM_IC_Start(&htim23, TIM_CHANNEL_1); // period
+  HAL_TIM_IC_Start(&htim23, TIM_CHANNEL_2); // duty
+
+  HAL_Delay(2);
+  enc_rot_A._converted_value = get_pwm_angle(&htim4);
+  enc_rot_C._converted_value = get_pwm_angle(&htim23);
+  enc_rot_Z._converted_value = 0.0f; // homing needed
   
   uint16_t cmd_clear = 0x4001;
   uint16_t cmd_read  = 0xFFFF;
