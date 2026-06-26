@@ -143,6 +143,7 @@ int main(void)
   MX_TIM6_Init();
   MX_TIM15_Init();
   MX_TIM23_Init();
+  MX_TIM17_Init();
   /* USER CODE BEGIN 2 */
 
   enc_rot_X.g_ratio = 27.0f;
