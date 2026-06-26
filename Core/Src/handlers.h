@@ -50,8 +50,6 @@ extern uint16_t spi1_rx_buf[16];  // y
 extern uint16_t spi1_tx_buf[16];
 extern uint16_t spi2_rx_buf[16];  // x
 extern uint16_t spi2_tx_buf[16];
-extern uint16_t spi4_rx_buf[16];  // Z A C d.d.
-extern uint16_t spi4_tx_buf[16];
 
 // extern uint16_t spi4_single_buf[16];
 extern Axis axis_X, axis_Y;

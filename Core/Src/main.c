@@ -57,9 +57,6 @@ uint16_t spi1_rx_buf[16] __attribute__((section(".dma_buffer"), aligned(32))); /
 uint16_t spi1_tx_buf[16] __attribute__((section(".dma_buffer"), aligned(32)));
 uint16_t spi2_rx_buf[16] __attribute__((section(".dma_buffer"), aligned(32))); // Y
 uint16_t spi2_tx_buf[16] __attribute__((section(".dma_buffer"), aligned(32)));
-uint16_t spi4_rx_buf[16] __attribute__((section(".dma_buffer"), aligned(32))); // Z A C
-uint16_t spi4_tx_buf[16] __attribute__((section(".dma_buffer"), aligned(32)));
-
 uint8_t spi3_rx_buf[sizeof(SPIPacket)] __attribute__((section(".dma_buffer"), aligned(32))); // from raspi
   // Raspberry SPI3
 uint8_t spi3_tx_buf_active[sizeof(SPIPacket)] __attribute__((section(".dma_buffer"), aligned(32)));
@@ -295,38 +292,6 @@ int main(void)
       // Se fallisce l'avvio del DMA, accende i LED e si ferma per debug
       Error_Handler();
   }
-
-  /*
-    ____  ____ ___ _  _     ___       _ _   
-   / ___||  _ \_ _| || |   |_ _|_ __ (_) |_ 
-   \___ \| |_) | || || |_   | || '_ \| | __|
-    ___) |  __/| ||__   _|  | || | | | | |_ 
-   |____/|_|  |___|  |_|   |___|_| |_|_|\__|
-                                            
-  */
-  uint16_t cmd_clear_3[3] = {0x4001, 0x4001, 0x4001};
-  uint16_t cmd_read_3[3]  = {0xFFFF, 0xFFFF, 0xFFFF};
-  uint16_t dummy_3[3]     = {0, 0, 0};
-  HAL_GPIO_WritePin(SPI4_CSS_GPIO_Port, SPI4_CSS_Pin, GPIO_PIN_RESET);
-  HAL_SPI_TransmitReceive(&hspi4, (uint8_t*)cmd_clear_3, (uint8_t*)dummy_3, 3, 100);
-  HAL_GPIO_WritePin(SPI4_CSS_GPIO_Port, SPI4_CSS_Pin, GPIO_PIN_SET);
-  HAL_Delay(2);
-  HAL_GPIO_WritePin(SPI4_CSS_GPIO_Port, SPI4_CSS_Pin, GPIO_PIN_RESET);
-  HAL_SPI_TransmitReceive(&hspi4, (uint8_t*)cmd_read_3, (uint8_t*)dummy_3, 3, 100);
-  HAL_GPIO_WritePin(SPI4_CSS_GPIO_Port, SPI4_CSS_Pin, GPIO_PIN_SET);
-  HAL_Delay(2);
-  HAL_GPIO_WritePin(SPI4_CSS_GPIO_Port, SPI4_CSS_Pin, GPIO_PIN_RESET);
-  HAL_SPI_TransmitReceive(&hspi4, (uint8_t*)cmd_read_3, (uint8_t*)dummy_3, 3, 100);
-  HAL_GPIO_WritePin(SPI4_CSS_GPIO_Port, SPI4_CSS_Pin, GPIO_PIN_SET);
-  HAL_Delay(2);
-  spi4_tx_buf[0] = 0xFFFF;
-  spi4_tx_buf[1] = 0xFFFF;
-  spi4_tx_buf[2] = 0xFFFF;
-  SCB_CleanDCache_by_Addr((uint32_t*)spi4_tx_buf, sizeof(spi4_tx_buf));
-  enc_rot_C._last_raw_pos = (float)(dummy_3[0] & 0x3FFF) * (360.0f / 16384.0f);
-  enc_rot_A._last_raw_pos = (float)(dummy_3[1] & 0x3FFF) * (360.0f / 16384.0f);
-  enc_rot_Z._last_raw_pos = (float)(dummy_3[2] & 0x3FFF) * (360.0f / 16384.0f);
-
 
   /*
     _     _____ ____        ____                       
