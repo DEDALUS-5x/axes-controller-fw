@@ -79,6 +79,16 @@ void update_rotary_encoder(Encoder *enc, uint16_t raw_spi, float dt);
 
 /**
  * 
+ * @brief This function takes the raw PWM data from the TIM peripheral and converts it to the effective angular position of the stepper motor. At first, it calculates the duty cycle and the period of the PWM signal, then it calculates the angle in steps and finally it converts it to degrees. It also calculates the velocity and acceleration of the encoder. Regarding the angle calculation, it takes into account the offset of 16 ticks. The function also handles the case when the encoder is not connected or when the timer is not running.
+ * @param enc Pointer to `Encoder` instance
+ * @param htim Pointer to `TIM_HandleTypeDef` instance
+ * @param dt time interval
+ * 
+ */
+void update_pwm_encoder(Encoder *enc, TIM_HandleTypeDef *htim, float dt);
+
+/**
+ * 
  * @brief Handler of the real-time timer. It is called as interrupt handler of the same timer and it runs the board operations at the timer frequency
  * @param htim Timer instance, in this case `TIM6`. It runs at 10kHz, so this function is called at the same frequency. PIDs and DMAs request are called at the same freq, but the linear encoders PID is called at 1kHz
  */

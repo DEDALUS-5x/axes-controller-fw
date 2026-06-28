@@ -229,10 +229,10 @@ int main(void)
   HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_2);
   HAL_TIM_IC_Start(&htim23, TIM_CHANNEL_1); // period
   HAL_TIM_IC_Start(&htim23, TIM_CHANNEL_2); // duty
-
+  
   HAL_Delay(2);
-  enc_rot_A._converted_value = get_pwm_angle(&htim4);
-  enc_rot_C._converted_value = get_pwm_angle(&htim23);
+  update_pwm_encoder(&enc_rot_A, &htim4, OUT_PERIOD);
+  update_pwm_encoder(&enc_rot_C, &htim23, OUT_PERIOD);
   enc_rot_Z._converted_value = 0.0f; // homing needed
   
   uint16_t cmd_clear = 0x4001;

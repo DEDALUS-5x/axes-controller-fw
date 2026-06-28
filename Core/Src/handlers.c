@@ -50,19 +50,41 @@ void update_rotary_encoder(Encoder *enc, uint16_t raw_spi, float dt){
   enc -> _last_velocity = enc -> _velocity;
 }
 
-float get_pwm_angle(TIM_HandleTypeDef *htim) {
+void update_pwm_encoder(Encoder *enc, TIM_HandleTypeDef *htim, float dt) {
     uint32_t period = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);
     uint32_t duty   = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2);
-    
-    if (period == 0) return 0.0f; 
+
+    if (period == 0) return; // no enc or no timer
     float duty_cycle = (float)duty / (float)period;
-    float angle = (duty_cycle - 0.0416f) * (360.0f / (0.9583f - 0.0416f));
-    if (angle < 0.0f) angle = 0.0f;
-    if (angle > 360.0f) angle = 360.0f;
+    float angle_steps = (duty_cycle * 4119.0f) - 16.0f;
 
-    return angle;
+    if (angle_steps < 0.0f) angle_steps = 0.0f; // error
+    if (angle_steps > 4095.0f) angle_steps = 4095.0f; // error
+
+    // extract angle from 0 to 360
+    float new_pos = (angle_steps / 4095.0f) * 360.0f;
+    float diff = new_pos - enc->_last_raw_pos;
+    if (diff > 180.0f) {
+        diff -= 360.0f;
+        enc->_turns--;
+    }
+    else if (diff < -180.0f) {
+        diff += 360.0f;
+        enc->_turns++;
+    }
+
+    enc->_last_raw_pos = new_pos;
+    float total_pos_deg = (enc->_turns * 360.0f) + new_pos;
+    enc->_converted_value = (total_pos_deg - enc->_offset);
+
+    float instant_vel = diff / dt;
+    enc->_velocity = (enc->_velocity * 0.99f) + (instant_vel * 0.01f);
+    enc->_last_converted_value = enc->_converted_value;
+    
+    float inst_acc = (enc->_velocity - enc->_last_velocity) / dt;
+    enc->_acceleration = enc->_acceleration * 0.95f + inst_acc * 0.05f;
+    enc->_last_velocity = enc->_velocity;
 }
-
 /*
   ____            _   _____ _                
  |  _ \ ___  __ _| | |_   _(_)_ __ ___   ___ 
@@ -154,8 +176,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
           axis_Y._pid_vel._setpoint = axis_Y._target_vel;
 
           // positioning axes
-          enc_rot_A._converted_value = get_pwm_angle(&htim4);
-          enc_rot_C._converted_value = get_pwm_angle(&htim23);
+          update_pwm_encoder(&enc_rot_Z, &htim4, dt_pos);
+          update_pwm_encoder(&enc_rot_A, &htim4, dt_pos);
           enc_rot_Z._converted_value += (axis_Z._current_speed_hz * dt_pos);
           if (machine_state == HOMING || machine_state == RUN) {
               stepper_loop(&axis_Z, &htim17, TIM_CHANNEL_1, DIR_Z1_GPIO_Port, DIR_Z1_Pin, 20.0f, 5.0f);
