@@ -19,7 +19,7 @@ static uint8_t homing_counter = 0;
 static volatile uint8_t spi1_need_clear = 0;
 static volatile uint8_t spi2_need_clear = 0;
 static volatile uint8_t spi4_need_clear = 0;
-static volatile uint8_t spi5_need_clear = 0;
+static volatile uint8_t spi6_need_clear = 0;
 
 void update_rotary_encoder(Encoder *enc, uint16_t raw_spi, float dt){
 
@@ -328,15 +328,15 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
     }
   }
 
-  else if(hspi -> Instance == SPI5){
+  else if(hspi -> Instance == SPI6){
 
-    HAL_GPIO_WritePin(SPI5_CSS_GPIO_Port, SPI5_CSS_Pin, GPIO_PIN_SET);
-    SCB_InvalidateDCache_by_Addr((uint32_t *)spi5_rx_buf, sizeof(spi5_rx_buf));
+    HAL_GPIO_WritePin(SPI6_CSS_GPIO_Port, SPI6_CSS_Pin, GPIO_PIN_SET);
+    SCB_InvalidateDCache_by_Addr((uint32_t *)spi6_rx_buf, sizeof(spi6_rx_buf));
 
-    if (spi5_rx_buf[0] & 0x4000) {
-        spi5_need_clear = 1;
+    if (spi6_rx_buf[0] & 0x4000) {
+        spi6_need_clear = 1;
     } else {
-        update_rotary_encoder(&enc_rot_C, spi5_rx_buf[0], IN_PERIOD);
+        update_rotary_encoder(&enc_rot_C, spi6_rx_buf[0], IN_PERIOD);
     }
   }
 
