@@ -171,9 +171,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
           // PID pos
           axis_X._pid_pos._setpoint = axis_X._target_pos;
           axis_X._pid_vel._setpoint = -PID_compute_pos(&axis_X._pid_pos, enc_lin_X._converted_value, dt_pos) + axis_X._target_vel;
+          axis_Y._pid_pos._setpoint = axis_Y._target_pos;
           axis_Y._pid_vel._setpoint = PID_compute_pos(&axis_Y._pid_pos, enc_lin_Y._converted_value, dt_pos) + axis_Y._target_vel;
-          axis_X._pid_vel._setpoint = axis_X._target_vel;
-          axis_Y._pid_vel._setpoint = axis_Y._target_vel;
+          axis_X._pid_vel._setpoint += axis_X._target_vel;
+          axis_Y._pid_vel._setpoint += axis_Y._target_vel;
 
           // positioning axes
           update_pwm_encoder(&enc_rot_C, &htim23, dt_pos);
@@ -428,7 +429,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
     __HAL_TIM_SET_COMPARE(&htim15, TIM_CHANNEL_1, 0);
     __HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_2, 0);
 
-    machine_state = INIT;
+    // machine_state = INIT;
     // while(1); // required power cycle. The endstop interrupts have the higher priority
   }
 

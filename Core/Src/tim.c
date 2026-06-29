@@ -584,7 +584,7 @@ void MX_TIM23_Init(void)
 
   /* USER CODE END TIM23_Init 1 */
   htim23.Instance = TIM23;
-  htim23.Init.Prescaler = 0;
+  htim23.Init.Prescaler = 274;
   htim23.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim23.Init.Period = 4294967295;
   htim23.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
