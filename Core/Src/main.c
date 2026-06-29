@@ -180,9 +180,9 @@ int main(void)
   axis_Y._enc_lin = &enc_lin_Y;
   axis_Y._pwm_register = &TIM1->CCR3;
   axis_Y._enc_rot -> _offset = 0.0f;
-  PID_init(&axis_Y._pid_pos, 150.0f, 0.01f, 0.001f, 100.0f);
+  PID_init(&axis_Y._pid_pos, 20.0f, 0.001f, 0.001f, 100.0f);
   // PID_init(&axis_Y._pid_vel, 366.4f, 0.0916f, 0.000916f, 3000.0f);
-  PID_init(&axis_Y._pid_vel, 100.0f, 0.01f, 0.001f, 10000.0f);
+  PID_init(&axis_Y._pid_vel, 80.0f, 0.001f, 0.001f, 10000.0f);
   HAL_TIM_Encoder_Start(&htim5, TIM_CHANNEL_ALL);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
@@ -329,6 +329,7 @@ int main(void)
   axis_X._target_vel = 0.0f;
   axis_Y._target_pos = 0.0f;
   axis_Y._target_vel = 0.0f;
+  axis_C._target = 0.0f;
   // let's start bitches
   HAL_TIM_Base_Start_IT(&htim6);
 
@@ -353,17 +354,19 @@ int main(void)
     */
 
 
-/*
+    /*
     __disable_irq();
 uint32_t per_a = htim4.Instance->CCR1;
 uint32_t dut_a = htim4.Instance->CCR2;
 uint32_t per_c = htim23.Instance->CCR1;
 __enable_irq();
 
-sprintf(serial_buf, "Raw TIM4 (A) -> Period: %lu, Duty: %lu | Raw TIM23 (C) -> Period: %lu, Duty: %lu\r\n", per_a, dut_a, per_c, htim23.Instance->CCR2);
+sprintf(serial_buf, "Raw TIM4 (A) -> Period: %lu, Duty: %lu | Raw TIM23 (C) -> Period: %lu, Duty: %lu\ | machine state: %d\r\n", per_a, dut_a, per_c, htim23.Instance->CCR2, machine_state);
 HAL_UART_Transmit(&huart1, (uint8_t*)serial_buf, strlen(serial_buf), 10);
 HAL_Delay(100);
+
 */
+
 
     __disable_irq();
     // uint16_t raw_y = spi2_rx_buf[0];
