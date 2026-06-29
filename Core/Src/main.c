@@ -19,6 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "adc.h"
+#include "bdma.h"
 #include "dma.h"
 #include "spi.h"
 #include "tim.h"
@@ -130,6 +131,7 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_DMA_Init();
+  MX_BDMA_Init();
   MX_TIM2_Init();
   MX_TIM3_Init();
   MX_TIM5_Init();
@@ -144,8 +146,9 @@ int main(void)
   MX_TIM4_Init();
   MX_TIM6_Init();
   MX_TIM15_Init();
-  MX_TIM23_Init();
   MX_TIM17_Init();
+  MX_SPI6_Init();
+  MX_TIM23_Init();
   /* USER CODE BEGIN 2 */
 
   enc_rot_X.g_ratio = 27.0f;

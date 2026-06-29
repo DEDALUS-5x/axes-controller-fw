@@ -563,8 +563,6 @@ void MX_TIM23_Init(void)
   /* USER CODE END TIM23_Init 0 */
 
   TIM_ClockConfigTypeDef sClockSourceConfig = {0};
-  TIM_SlaveConfigTypeDef sSlaveConfig = {0};
-  TIM_IC_InitTypeDef sConfigIC = {0};
   TIM_MasterConfigTypeDef sMasterConfig = {0};
 
   /* USER CODE BEGIN TIM23_Init 1 */
@@ -582,33 +580,6 @@ void MX_TIM23_Init(void)
   }
   sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
   if (HAL_TIM_ConfigClockSource(&htim23, &sClockSourceConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_TIM_IC_Init(&htim23) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sSlaveConfig.SlaveMode = TIM_SLAVEMODE_RESET;
-  sSlaveConfig.InputTrigger = TIM_TS_TI1FP1;
-  sSlaveConfig.TriggerPolarity = TIM_INPUTCHANNELPOLARITY_RISING;
-  sSlaveConfig.TriggerPrescaler = TIM_ICPSC_DIV1;
-  sSlaveConfig.TriggerFilter = 3;
-  if (HAL_TIM_SlaveConfigSynchro(&htim23, &sSlaveConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_RISING;
-  sConfigIC.ICSelection = TIM_ICSELECTION_DIRECTTI;
-  sConfigIC.ICPrescaler = TIM_ICPSC_DIV1;
-  sConfigIC.ICFilter = 3;
-  if (HAL_TIM_IC_ConfigChannel(&htim23, &sConfigIC, TIM_CHANNEL_1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_FALLING;
-  sConfigIC.ICSelection = TIM_ICSELECTION_INDIRECTTI;
-  if (HAL_TIM_IC_ConfigChannel(&htim23, &sConfigIC, TIM_CHANNEL_2) != HAL_OK)
   {
     Error_Handler();
   }
@@ -706,18 +677,6 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* tim_baseHandle)
   /* USER CODE END TIM23_MspInit 0 */
     /* TIM23 clock enable */
     __HAL_RCC_TIM23_CLK_ENABLE();
-
-    __HAL_RCC_GPIOG_CLK_ENABLE();
-    /**TIM23 GPIO Configuration
-    PG12     ------> TIM23_CH1
-    */
-    GPIO_InitStruct.Pin = ROTENC_PWM_C_Pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    GPIO_InitStruct.Alternate = GPIO_AF13_TIM23;
-    HAL_GPIO_Init(ROTENC_PWM_C_GPIO_Port, &GPIO_InitStruct);
-
   /* USER CODE BEGIN TIM23_MspInit 1 */
 
   /* USER CODE END TIM23_MspInit 1 */
@@ -993,12 +952,6 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* tim_baseHandle)
   /* USER CODE END TIM23_MspDeInit 0 */
     /* Peripheral clock disable */
     __HAL_RCC_TIM23_CLK_DISABLE();
-
-    /**TIM23 GPIO Configuration
-    PG12     ------> TIM23_CH1
-    */
-    HAL_GPIO_DeInit(ROTENC_PWM_C_GPIO_Port, ROTENC_PWM_C_Pin);
-
   /* USER CODE BEGIN TIM23_MspDeInit 1 */
 
   /* USER CODE END TIM23_MspDeInit 1 */
