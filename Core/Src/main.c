@@ -57,6 +57,11 @@ uint16_t spi1_rx_buf[16] __attribute__((section(".dma_buffer"), aligned(32))); /
 uint16_t spi1_tx_buf[16] __attribute__((section(".dma_buffer"), aligned(32)));
 uint16_t spi2_rx_buf[16] __attribute__((section(".dma_buffer"), aligned(32))); // Y
 uint16_t spi2_tx_buf[16] __attribute__((section(".dma_buffer"), aligned(32)));
+uint16_t spi4_rx_buf[16] __attribute__((section(".dma_buffer"), aligned(32))); // A
+uint16_t spi4_tx_buf[16] __attribute__((section(".dma_buffer"), aligned(32)));
+uint16_t spi5_rx_buf[16] __attribute__((section(".dma_buffer"), aligned(32))); // C
+uint16_t spi5_tx_buf[16] __attribute__((section(".dma_buffer"), aligned(32)));
+
 uint8_t spi3_rx_buf[sizeof(SPIPacket)] __attribute__((section(".dma_buffer"), aligned(32))); // from raspi
   // Raspberry SPI3
 uint8_t spi3_tx_buf_active[sizeof(SPIPacket)] __attribute__((section(".dma_buffer"), aligned(32)));
@@ -270,7 +275,7 @@ int main(void)
    |____/|_|  |___|_____| |___|_| |_|_|\__|
                                            
   */
-    HAL_GPIO_WritePin(SPI2_CSS_GPIO_Port, SPI2_CSS_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(SPI2_CSS_GPIO_Port, SPI2_CSS_Pin, GPIO_PIN_RESET);
   HAL_SPI_TransmitReceive(&hspi2, (uint8_t*)&cmd_clear, (uint8_t*)&dummy, 1, 100);
   HAL_GPIO_WritePin(SPI2_CSS_GPIO_Port, SPI2_CSS_Pin, GPIO_PIN_SET);
   HAL_Delay(2);
@@ -304,6 +309,55 @@ int main(void)
       // Se fallisce l'avvio del DMA, accende i LED e si ferma per debug
       Error_Handler();
   }
+
+  /*
+    ____  ____ ___ _  _     ___       _ _   
+   / ___||  _ \_ _| || |   |_ _|_ __ (_) |_ 
+   \___ \| |_) | || || |_   | || '_ \| | __|
+    ___) |  __/| ||__   _|  | || | | | | |_ 
+   |____/|_|  |___|  |_|   |___|_| |_|_|\__|
+                                            
+  */
+  HAL_GPIO_WritePin(SPI4_CSS_GPIO_Port, SPI4_CSS_Pin, GPIO_PIN_RESET);
+  HAL_SPI_TransmitReceive(&hspi4, (uint8_t*)&cmd_clear, (uint8_t*)&dummy, 1, 100);
+  HAL_GPIO_WritePin(SPI4_CSS_GPIO_Port, SPI4_CSS_Pin, GPIO_PIN_SET);
+  HAL_Delay(2);
+  HAL_GPIO_WritePin(SPI4_CSS_GPIO_Port, SPI4_CSS_Pin, GPIO_PIN_RESET);
+  HAL_SPI_TransmitReceive(&hspi4, (uint8_t*)&cmd_read, (uint8_t*)&dummy, 1, 100);
+  HAL_GPIO_WritePin(SPI4_CSS_GPIO_Port, SPI4_CSS_Pin, GPIO_PIN_SET);
+  HAL_Delay(2);
+  HAL_GPIO_WritePin(SPI4_CSS_GPIO_Port, SPI4_CSS_Pin, GPIO_PIN_RESET);
+  HAL_SPI_TransmitReceive(&hspi4, (uint8_t*)&cmd_read, (uint8_t*)&dummy, 1, 100);
+  HAL_GPIO_WritePin(SPI4_CSS_GPIO_Port, SPI4_CSS_Pin, GPIO_PIN_SET);
+  HAL_Delay(2);
+  spi4_tx_buf[0] = 0xFFFF;
+  SCB_CleanDCache_by_Addr((uint32_t*)spi4_tx_buf, sizeof(spi4_tx_buf));
+  
+  enc_rot_A._last_raw_pos = (float)(dummy & 0x3FFF) * (360.0f / 16384.0f);
+
+  /*
+    ____  ____ ___ ____    ___       _ _   
+   / ___||  _ \_ _| ___|  |_ _|_ __ (_) |_ 
+   \___ \| |_) | ||___ \   | || '_ \| | __|
+    ___) |  __/| | ___) |  | || | | | | |_ 
+   |____/|_|  |___|____/  |___|_| |_|_|\__|
+                                           
+  */
+  HAL_GPIO_WritePin(SPI5_CSS_GPIO_Port, SPI5_CSS_Pin, GPIO_PIN_RESET);
+  HAL_SPI_TransmitReceive(&hspi5, (uint8_t*)&cmd_clear, (uint8_t*)&dummy, 1, 100);
+  HAL_GPIO_WritePin(SPI5_CSS_GPIO_Port, SPI5_CSS_Pin, GPIO_PIN_SET);
+  HAL_Delay(2);
+  HAL_GPIO_WritePin(SPI5_CSS_GPIO_Port, SPI5_CSS_Pin, GPIO_PIN_RESET);
+  HAL_SPI_TransmitReceive(&hspi5, (uint8_t*)&cmd_read, (uint8_t*)&dummy, 1, 100);
+  HAL_GPIO_WritePin(SPI5_CSS_GPIO_Port, SPI5_CSS_Pin, GPIO_PIN_SET);
+  HAL_Delay(2);
+  HAL_GPIO_WritePin(SPI5_CSS_GPIO_Port, SPI5_CSS_in, GPIO_PIN_RESET);
+  HAL_SPI_TransmitReceive(&hspi5, (uint8_t*)&cmd_read, (uint8_t*)&dummy, 1, 100);
+  HAL_GPIO_WritePin(SPI5_CSS_GPIO_Port, SPI5_CSS_Pin, GPIO_PIN_SET);
+  HAL_Delay(2);
+  spi5_tx_buf[0] = 0xFFFF;
+  SCB_CleanDCache_by_Addr((uint32_t*)spi5_tx_buf, sizeof(spi5_tx_buf));
+  enc_rot_C._last_raw_pos = (float)(dummy & 0x3FFF) * (360.0f / 16384.0f);
 
   /*
     _     _____ ____        ____                       

@@ -18,6 +18,8 @@ static uint8_t homing_counter = 0;
 
 static volatile uint8_t spi1_need_clear = 0;
 static volatile uint8_t spi2_need_clear = 0;
+static volatile uint8_t spi4_need_clear = 0;
+static volatile uint8_t spi5_need_clear = 0;
 
 void update_rotary_encoder(Encoder *enc, uint16_t raw_spi, float dt){
 
@@ -180,9 +182,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
           // update_pwm_encoder(&enc_rot_C, &htim23, dt_pos);
           // update_pwm_encoder(&enc_rot_A, &htim4, dt_pos);
 
-          enc_rot_Z._converted_value += (axis_Z._current_speed_hz * dt_pos);
-          enc_rot_A._converted_value += (axis_A._current_speed_hz * dt_pos);
-          enc_rot_C._converted_value += (axis_C._current_speed_hz * dt_pos);
+          // enc_rot_Z._converted_value += (axis_Z._current_speed_hz * dt_pos);
+          // enc_rot_A._converted_value += (axis_A._current_speed_hz * dt_pos);
+          // enc_rot_C._converted_value += (axis_C._current_speed_hz * dt_pos);
 
           if (machine_state == HOMING || machine_state == RUN) {
               stepper_loop(&axis_Z, &htim17, TIM_CHANNEL_1, DIR_Z1_GPIO_Port, DIR_Z1_Pin, 20.0f, 10.0f);
@@ -299,6 +301,42 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
         spi2_need_clear = 1;
     } else {
         update_rotary_encoder(&enc_rot_X, spi2_rx_buf[0], IN_PERIOD);
+    }
+  }
+
+  else if(hspi -> Instance == SPI2){
+
+    HAL_GPIO_WritePin(SPI2_CSS_GPIO_Port, SPI2_CSS_Pin, GPIO_PIN_SET);
+    SCB_InvalidateDCache_by_Addr((uint32_t *)spi2_rx_buf, sizeof(spi2_rx_buf));
+
+    if (spi2_rx_buf[0] & 0x4000) {
+        spi2_need_clear = 1;
+    } else {
+        update_rotary_encoder(&enc_rot_X, spi2_rx_buf[0], IN_PERIOD);
+    }
+  }
+
+  else if(hspi -> Instance == SPI4){
+
+    HAL_GPIO_WritePin(SPI4_CSS_GPIO_Port, SPI4_CSS_Pin, GPIO_PIN_SET);
+    SCB_InvalidateDCache_by_Addr((uint32_t *)spi4_rx_buf, sizeof(spi4_rx_buf));
+
+    if (spi4_rx_buf[0] & 0x4000) {
+        spi4_need_clear = 1;
+    } else {
+        update_rotary_encoder(&enc_rot_A, spi4_rx_buf[0], IN_PERIOD);
+    }
+  }
+
+  else if(hspi -> Instance == SPI5){
+
+    HAL_GPIO_WritePin(SPI5_CSS_GPIO_Port, SPI5_CSS_Pin, GPIO_PIN_SET);
+    SCB_InvalidateDCache_by_Addr((uint32_t *)spi5_rx_buf, sizeof(spi5_rx_buf));
+
+    if (spi5_rx_buf[0] & 0x4000) {
+        spi5_need_clear = 1;
+    } else {
+        update_rotary_encoder(&enc_rot_C, spi5_rx_buf[0], IN_PERIOD);
     }
   }
 
