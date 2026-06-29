@@ -330,6 +330,7 @@ int main(void)
   axis_Y._target_pos = 0.0f;
   axis_Y._target_vel = 0.0f;
   axis_C._target = 0.0f;
+  axis_C._target = 0.0f;
   // let's start bitches
   HAL_TIM_Base_Start_IT(&htim6);
 
@@ -354,7 +355,6 @@ int main(void)
     */
 
 
-    /*
     __disable_irq();
 uint32_t per_a = htim4.Instance->CCR1;
 uint32_t dut_a = htim4.Instance->CCR2;
@@ -365,9 +365,7 @@ sprintf(serial_buf, "Raw TIM4 (A) -> Period: %lu, Duty: %lu | Raw TIM23 (C) -> P
 HAL_UART_Transmit(&huart1, (uint8_t*)serial_buf, strlen(serial_buf), 10);
 HAL_Delay(100);
 
-*/
-
-
+/*
     __disable_irq();
     // uint16_t raw_y = spi2_rx_buf[0];
     float pos_y = enc_lin_Y._converted_value;
@@ -383,6 +381,7 @@ HAL_Delay(100);
     
     HAL_UART_Transmit(&huart1, (uint8_t*)serial_buf, strlen(serial_buf), 10);
     HAL_Delay(100);
+    */
 
   }
   /* USER CODE END 3 */
