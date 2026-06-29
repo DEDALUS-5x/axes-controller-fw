@@ -156,7 +156,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
           enc_lin_X._acceleration = (enc_lin_X._acceleration * 0.8f) + (inst_acc_x * 0.2f);
 
           // Y
-          enc_lin_Y._converted_value = - (float)((int32_t)TIM5 -> CNT) * 0.01f;        
+          enc_lin_Y._converted_value = (float)((int32_t)TIM5 -> CNT) * 0.01f;        
           float inst_vel_y = (enc_lin_Y._converted_value - enc_lin_Y._last_converted_value) / dt_pos;
           enc_lin_Y._velocity = (enc_lin_Y._velocity * 0.8f) + (inst_vel_y * 0.2f);
           float inst_acc_y = (enc_lin_Y._velocity - enc_lin_Y._last_velocity) / dt_pos;
@@ -176,7 +176,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
           axis_Y._pid_vel._setpoint = axis_Y._target_vel;
 
           // positioning axes
-          update_pwm_encoder(&enc_rot_Z, &htim4, dt_pos);
+          update_pwm_encoder(&enc_rot_C, &htim23, dt_pos);
           update_pwm_encoder(&enc_rot_A, &htim4, dt_pos);
           enc_rot_Z._converted_value += (axis_Z._current_speed_hz * dt_pos);
           if (machine_state == HOMING || machine_state == RUN) {
