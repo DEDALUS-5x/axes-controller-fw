@@ -219,7 +219,7 @@ int main(void)
   axis_A._enc_rot = &enc_rot_A;
   axis_A._enc_rot -> _offset = 0.0f;
   axis_A._a = 1;
-  axis_A.steps_per_unit = 20; // 8.888889f;
+  axis_A.steps_per_unit = 8.888889f;
   HAL_TIM_PWM_Start(&htim15, TIM_CHANNEL_1);
   // HAL_TIM_IC_Start(&htim4, TIM_CHANNEL_1); // period
   // HAL_TIM_IC_Start(&htim4, TIM_CHANNEL_2); // duty

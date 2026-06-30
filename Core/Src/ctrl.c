@@ -165,15 +165,15 @@ void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, G
   if (required_speed < -max_speed) required_speed = -max_speed;
 
   if(stepper -> _a == 1) {
-          HAL_GPIO_WritePin(DIR_P2_GPIO_Port, DIR_P2_Pin, (required_speed >= 0.0f) ? GPIO_PIN_RESET : GPIO_PIN_SET);
+    HAL_GPIO_WritePin(DIR_P2_GPIO_Port, DIR_P2_Pin, (required_speed >= 0.0f) ? GPIO_PIN_RESET : GPIO_PIN_SET);
   }
   // tolerance as function of the speed in order to avoid vibrations
-  float tolerance = (stepper->_current_speed_hz == 0.0f) ? 0.6f : 0.15f; 
+  float tolerance = (stepper->_current_speed_hz == 0.0f) ? 0.5f : 0.2f; 
   if (fabsf(error) < tolerance) {
-      stepper_command(0.0f,10.0,  htim, channel, dir_port, dir_pin);
+      stepper_command(0.0f, stepper -> steps_per_unit,  htim, channel, dir_port, dir_pin);
       stepper->_current_speed_hz = 0.0f; // stop
       return; 
   }
 
-  stepper_command(required_speed, 10.0, htim, channel, dir_port, dir_pin);
+  stepper_command(required_speed, stepper -> steps_per_unit, htim, channel, dir_port, dir_pin);
 }
