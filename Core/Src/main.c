@@ -218,10 +218,10 @@ int main(void)
   */
   axis_A._enc_rot = &enc_rot_A;
   axis_A._enc_rot -> _offset = 0.0f;
-  axis_A.steps_per_unit = 8.888889f;
+  axis_A.steps_per_unit = 10.0f; //8.888889f;
   HAL_TIM_PWM_Start(&htim15, TIM_CHANNEL_1);
-  HAL_TIM_IC_Start(&htim4, TIM_CHANNEL_1); // period
-  HAL_TIM_IC_Start(&htim4, TIM_CHANNEL_2); // duty
+  // HAL_TIM_IC_Start(&htim4, TIM_CHANNEL_1); // period
+  // HAL_TIM_IC_Start(&htim4, TIM_CHANNEL_2); // duty
 
   /*
      ____      _          _     
@@ -235,12 +235,12 @@ int main(void)
   axis_C._enc_rot -> _offset = 0.0f;
   axis_C.steps_per_unit = 8.888889f;
   HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_2);
-  HAL_TIM_IC_Start(&htim23, TIM_CHANNEL_1); // period
-  HAL_TIM_IC_Start(&htim23, TIM_CHANNEL_2); // duty
+  // HAL_TIM_IC_Start(&htim23, TIM_CHANNEL_1); // period
+  // HAL_TIM_IC_Start(&htim23, TIM_CHANNEL_2); // duty
   
   HAL_Delay(2);
-  update_pwm_encoder(&enc_rot_A, &htim4, OUT_PERIOD);
-  update_pwm_encoder(&enc_rot_C, &htim23, OUT_PERIOD);
+  update_rotary_encoder(&enc_rot_A, spi4_rx_buf[0], 0.002);
+  update_rotary_encoder(&enc_rot_C, spi6_rx_buf[0], 0.002);
   enc_rot_Z._converted_value = 0.0f; // homing needed
   
   uint16_t cmd_clear = 0x4001;
@@ -386,6 +386,7 @@ int main(void)
   axis_X._target_vel = 0.0f;
   axis_Y._target_pos = 0.0f;
   axis_Y._target_vel = 0.0f;
+  axis_A._target = 10.0f;
   axis_C._target = 0.0f;
   axis_C._target = 0.0f;
   // let's start bitches
@@ -413,17 +414,6 @@ int main(void)
 
 
     __disable_irq();
-uint32_t per_a = htim4.Instance->CCR1;
-uint32_t dut_a = htim4.Instance->CCR2;
-uint32_t per_c = htim23.Instance->CCR1;
-__enable_irq();
-
-sprintf(serial_buf, "Raw TIM4 (A) -> Period: %lu, Duty: %lu | Raw TIM23 (C) -> Period: %lu, Duty: %lu\ | machine state: %d\r\n", per_a, dut_a, per_c, htim23.Instance->CCR2, machine_state);
-HAL_UART_Transmit(&huart1, (uint8_t*)serial_buf, strlen(serial_buf), 10);
-HAL_Delay(100);
-
-/*
-    __disable_irq();
     // uint16_t raw_y = spi2_rx_buf[0];
     float pos_y = enc_lin_Y._converted_value;
     float pos_x = enc_lin_X._converted_value;
@@ -438,7 +428,6 @@ HAL_Delay(100);
     
     HAL_UART_Transmit(&huart1, (uint8_t*)serial_buf, strlen(serial_buf), 10);
     HAL_Delay(100);
-    */
 
   }
   /* USER CODE END 3 */
