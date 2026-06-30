@@ -192,8 +192,8 @@ int main(void)
   // PID_init(&axis_Y._pid_vel, 366.4f, 0.0916f, 0.000916f, 3000.0f);
   PID_init(&axis_Y._pid_vel, 80.0f, 0.001f, 0.001f, 10000.0f);
   HAL_TIM_Encoder_Start(&htim5, TIM_CHANNEL_ALL);
-  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
-  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
+  // HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
+  // HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
 
   /*
     _____     _          _     
@@ -218,7 +218,8 @@ int main(void)
   */
   axis_A._enc_rot = &enc_rot_A;
   axis_A._enc_rot -> _offset = 0.0f;
-  axis_A.steps_per_unit = 10.0f; //8.888889f;
+  axis_A._a = 1;
+  axis_A.steps_per_unit = 20; // 8.888889f;
   HAL_TIM_PWM_Start(&htim15, TIM_CHANNEL_1);
   // HAL_TIM_IC_Start(&htim4, TIM_CHANNEL_1); // period
   // HAL_TIM_IC_Start(&htim4, TIM_CHANNEL_2); // duty
@@ -233,6 +234,7 @@ int main(void)
   */
   axis_C._enc_rot = &enc_rot_C;
   axis_C._enc_rot -> _offset = 0.0f;
+  axis_C._a = 0;
   axis_C.steps_per_unit = 8.888889f;
   HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_2);
   // HAL_TIM_IC_Start(&htim23, TIM_CHANNEL_1); // period
@@ -386,7 +388,7 @@ int main(void)
   axis_X._target_vel = 0.0f;
   axis_Y._target_pos = 0.0f;
   axis_Y._target_vel = 0.0f;
-  axis_A._target = 10.0f;
+  axis_A._target = 0.0f;
   axis_C._target = 0.0f;
   axis_C._target = 0.0f;
   // let's start bitches

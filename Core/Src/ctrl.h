@@ -15,6 +15,7 @@
 #include "types.h"
 
 #define DEG_TO_MM (40.0f / 360.0f)
+#define STEPPER_CLOCK 9821428.0f
 
 void PID_init(PID *pid, float kp, float ki, float kd, float limit);
 

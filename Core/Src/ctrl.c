@@ -110,12 +110,12 @@ void motor_command(Axis *axis, TIM_HandleTypeDef *htim, uint32_t channel1, uint3
 */
 
 
-void stepper_command(float speed, float steps_per_unit, TIM_HandleTypeDef *htim, uint32_t channel, GPIO_TypeDef *dir_port, uint16_t dir_pin) {
+
+void stepper_command(float speed,  float steps_per_unit, TIM_HandleTypeDef *htim, uint32_t channel, GPIO_TypeDef *dir_port, uint16_t dir_pin) {
     
-    HAL_GPIO_WritePin(dir_port, dir_pin, (speed >= 0.0f) ? GPIO_PIN_RESET : GPIO_PIN_SET);
+    HAL_GPIO_WritePin(dir_port, dir_pin, (speed <= 0.0f) ? GPIO_PIN_RESET : GPIO_PIN_SET);
 
-    float freq = fabsf(speed) * steps_per_unit;
-
+    float freq = fabsf(speed) * steps_per_unit; // steps per unit (10 steps per mm)
     if (freq < 0.5f) {
         __HAL_TIM_SET_COMPARE(htim, channel, 0); 
         return;
@@ -131,7 +131,6 @@ void stepper_command(float speed, float steps_per_unit, TIM_HandleTypeDef *htim,
     }
 
     uint32_t psc = htim->Instance->PSC + 1; // Il registro PSC è (valore - 1)
-
 
     uint32_t arr_val = (uint32_t)((float)timer_base_clock / (float)(psc * freq)) - 1;
 
@@ -156,24 +155,25 @@ void stepper_command(float speed, float steps_per_unit, TIM_HandleTypeDef *htim,
 
 void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, GPIO_TypeDef *dir_port, uint16_t dir_pin, float max_speed, float kp) {
 
-  float current_pos = stepper -> _enc_rot -> _converted_value;
+  float current_pos = stepper->_enc_rot->_converted_value;
 
-  float error = stepper -> _target - current_pos;
+  float error = stepper->_target - current_pos;
 
   float required_speed = error * kp;
 
   if (required_speed > max_speed) required_speed = max_speed;
   if (required_speed < -max_speed) required_speed = -max_speed;
 
+  if(stepper -> _a == 1) {
+          HAL_GPIO_WritePin(DIR_P2_GPIO_Port, DIR_P2_Pin, (required_speed >= 0.0f) ? GPIO_PIN_RESET : GPIO_PIN_SET);
+  }
   // tolerance as function of the speed in order to avoid vibrations
-  float tolerance = (stepper -> _current_speed_hz == 0.0f) ? 0.6f : 0.15f; 
+  float tolerance = (stepper->_current_speed_hz == 0.0f) ? 0.6f : 0.15f; 
   if (fabsf(error) < tolerance) {
-      stepper_command(0.0f, stepper -> steps_per_unit, htim, channel, dir_port, dir_pin);
-      stepper -> _current_speed_hz = 0.0f; // stop
+      stepper_command(0.0f,10.0,  htim, channel, dir_port, dir_pin);
+      stepper->_current_speed_hz = 0.0f; // stop
       return; 
   }
 
-  stepper -> _current_speed_hz = required_speed;
-
-  stepper_command(required_speed, stepper -> steps_per_unit, htim, channel, dir_port, dir_pin);
+  stepper_command(required_speed, 10.0, htim, channel, dir_port, dir_pin);
 }

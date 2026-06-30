@@ -58,10 +58,12 @@ typedef struct {
 
     Encoder *_enc_rot;
     float _target;
-
     float steps_per_unit;
     float _current_speed_hz;
-    float _accumulator;
+    float _target_speed;
+    float _last_error;
+    uint8_t _dir;
+    uint8_t _a;
 
 } Stepper;
 
