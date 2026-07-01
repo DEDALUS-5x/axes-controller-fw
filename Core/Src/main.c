@@ -351,6 +351,7 @@ int main(void)
   SCB_CleanDCache_by_Addr((uint32_t*)spi4_tx_buf, sizeof(spi4_tx_buf));
   
   enc_rot_A._last_raw_pos = (float)(dummy & 0x3FFF) * (360.0f / 16384.0f);
+  if (enc_rot_A._last_raw_pos > 180.0f) enc_rot_A._turns = -1;
 
   /*
     ____  ____ ___ __     ___       _ _                                              
@@ -375,6 +376,7 @@ int main(void)
   spi6_tx_buf[0] = 0xFFFF;
   SCB_CleanDCache_by_Addr((uint32_t*)spi6_tx_buf, sizeof(spi6_tx_buf));
   enc_rot_C._last_raw_pos = (float)(dummy & 0x3FFF) * (360.0f / 16384.0f);
+  if (enc_rot_C._last_raw_pos > 180.0f) enc_rot_C._turns = -1;
 
   /*
     _     _____ ____        ____                       
