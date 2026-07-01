@@ -132,8 +132,8 @@ void Error_Handler(void);
 #define SPI6_CSS_GPIO_Port GPIOG
 #define MX_B_Pin GPIO_PIN_3
 #define MX_B_GPIO_Port GPIOB
-#define ROTENC_PWM_A_Pin GPIO_PIN_6
-#define ROTENC_PWM_A_GPIO_Port GPIOB
+#define STEP_P2_Pin GPIO_PIN_6
+#define STEP_P2_GPIO_Port GPIOB
 #define STEP_Z1_Pin GPIO_PIN_9
 #define STEP_Z1_GPIO_Port GPIOB
 #define DIR_Z1_Pin GPIO_PIN_1

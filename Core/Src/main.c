@@ -75,7 +75,7 @@ float current_values[3];
 
 uint8_t machine_state = INIT;
 Axis axis_X, axis_Y;
-Stepper axis_Z, axis_A, axis_C;
+Stepper axis_Z, axis_A1, axis_A2, axis_C;
 Encoder enc_rot_X, enc_rot_Y, enc_rot_Z, enc_rot_A, enc_rot_C, enc_rot_F;
 Encoder enc_lin_X, enc_lin_Y;
 
@@ -149,6 +149,7 @@ int main(void)
   MX_TIM17_Init();
   MX_SPI6_Init();
   MX_TIM23_Init();
+  MX_TIM16_Init();
   /* USER CODE BEGIN 2 */
 
   enc_rot_X.g_ratio = 27.0f;
@@ -216,11 +217,17 @@ int main(void)
    /_/   \_\ /_/   \_\/_/\_\_|___/
                                   
   */
-  axis_A._enc_rot = &enc_rot_A;
-  axis_A._enc_rot -> _offset = 0.0f;
-  axis_A.steps_per_unit = 8.888889f;
+  axis_A1._enc_rot = &enc_rot_A;
+  axis_A1._enc_rot -> _offset = 0.0f;
+  axis_A1.steps_per_unit = 8.888889f;
+  axis_A1._dir = 0;
   HAL_TIM_PWM_Start(&htim15, TIM_CHANNEL_1);
-  // HAL_TIM_IC_Start(&htim4, TIM_CHANNEL_1); // period
+
+  axis_A2._enc_rot = &enc_rot_A;
+  axis_A2._enc_rot -> _offset = 0.0f;
+  axis_A2.steps_per_unit = 8.888889f;
+  axis_A2._dir = 1; // reverse direction
+  HAL_TIMEx_PWMN_Start(&htim16, TIM_CHANNEL_1);  // HAL_TIM_IC_Start(&htim4, TIM_CHANNEL_1); // period
   // HAL_TIM_IC_Start(&htim4, TIM_CHANNEL_2); // duty
 
   /*
@@ -234,6 +241,7 @@ int main(void)
   axis_C._enc_rot = &enc_rot_C;
   axis_C._enc_rot -> _offset = 0.0f;
   axis_C.steps_per_unit = 8.888889f;
+  axis_C._dir = 0;
   HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_2);
   // HAL_TIM_IC_Start(&htim23, TIM_CHANNEL_1); // period
   // HAL_TIM_IC_Start(&htim23, TIM_CHANNEL_2); // duty
@@ -378,19 +386,20 @@ int main(void)
   HAL_GPIO_TogglePin(LED_1_GPIO_Port, LED_1_Pin);
   HAL_Delay(500);
 
-  HAL_GPIO_WritePin(EN_STEPPERS_GPIO_Port, EN_STEPPERS_Pin, GPIO_PIN_RESET);
-
   machine_state = RUN;
 
   axis_X._target_pos = 0.0f;
   axis_X._target_vel = 0.0f;
   axis_Y._target_pos = 0.0f;
   axis_Y._target_vel = 0.0f;
-  axis_A._target = 0.0f;
-  axis_C._target = 0.0f;
+  axis_A1._target = 0.0f;
+  axis_A2._target = 0.0f;
   axis_C._target = 0.0f;
   // let's start bitches
   HAL_TIM_Base_Start_IT(&htim6);
+  HAL_Delay(10);
+    HAL_GPIO_WritePin(EN_STEPPERS_GPIO_Port, EN_STEPPERS_Pin, GPIO_PIN_RESET);
+
 
   /* USER CODE END 2 */
 

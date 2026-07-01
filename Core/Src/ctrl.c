@@ -111,12 +111,16 @@ void motor_command(Axis *axis, TIM_HandleTypeDef *htim, uint32_t channel1, uint3
 
 
 
-void stepper_command(float speed,  float steps_per_unit, TIM_HandleTypeDef *htim, uint32_t channel, GPIO_TypeDef *dir_port, uint16_t dir_pin) {
+void stepper_command(float speed,  float steps_per_unit, TIM_HandleTypeDef *htim, uint32_t channel, GPIO_TypeDef *dir_port, uint16_t dir_pin, uint8_t dir) {
     
-    HAL_GPIO_WritePin(dir_port, dir_pin, (speed <= 0.0f) ? GPIO_PIN_RESET : GPIO_PIN_SET);
+    if(dir == 0) {
+        HAL_GPIO_WritePin(dir_port, dir_pin, (speed <= 0.0f) ? GPIO_PIN_RESET : GPIO_PIN_SET);
+    } else {
+        HAL_GPIO_WritePin(dir_port, dir_pin, (speed <= 0.0f) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    }
 
     float freq = fabsf(speed) * steps_per_unit; // steps per unit (10 steps per mm)
-    if (freq < 1.0f) {
+    if (freq < 1.2f) {
         __HAL_TIM_SET_COMPARE(htim, channel, 0); 
         return;
     }
@@ -147,30 +151,51 @@ void stepper_command(float speed,  float steps_per_unit, TIM_HandleTypeDef *htim
         htim->Instance->CNT = 0;
     }
 
-    if (!(htim->Instance->CR1 & TIM_CR1_CEN)) {
+    if (htim->Instance == TIM16) {
+        HAL_TIMEx_PWMN_Start(htim, channel);
+    } else {
         HAL_TIM_PWM_Start(htim, channel);
     }
 }
-
 
 void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, GPIO_TypeDef *dir_port, uint16_t dir_pin, float max_speed, float kp, float kd, float dt) {
 
   float current_pos = stepper->_enc_rot->_converted_value;
   float error = stepper->_target - current_pos;
 
-  float derivative = (error - stepper->_last_error) / dt;
-  stepper->_last_error = error;
-
-  float required_speed = (error * kp) + (derivative * kd);
-  if (required_speed > max_speed) required_speed = max_speed;
-  if (required_speed < -max_speed) required_speed = -max_speed;
+  // 1. LA DEADBAND FISICA (Il Segreto per gli Stepper)
+  // Calcoliamo quanti gradi copre un singolo micropasso
+  float physical_step_deg = 1.0f / stepper->steps_per_unit; 
   
-  float tolerance = (stepper->_current_speed_hz == 0.0f) ? 0.5f : 0.2f; 
+  // La tolleranza deve essere ~1.5 volte il singolo passo fisico (circa 0.17 gradi)
+  float tolerance = physical_step_deg * 1.5f; 
+
   if (fabsf(error) < tolerance) {
-      stepper_command(0.0f, stepper -> steps_per_unit,  htim, channel, dir_port, dir_pin);
+      // Siamo sul "dente magnetico" più vicino al target. Spegniamo gli impulsi.
+      // Il driver stepper manterrà la coppia di tenuta (Holding Torque) automaticamente.
+      stepper_command(0.0f, stepper->steps_per_unit, htim, channel, dir_port, dir_pin, stepper->_dir);
       stepper->_current_speed_hz = 0.0f;
+      stepper->_last_error = error;
       return; 
   }
 
-  stepper_command(required_speed, stepper -> steps_per_unit, htim, channel, dir_port, dir_pin);
+  // 2. CONTROLLO PD
+  float derivative = -stepper->_enc_rot->_velocity; 
+  float required_speed = (error * kp) + (derivative * kd);
+
+  // 3. FRENO DI AVVICINAMENTO
+  float approach_zone = 5.0f; // Gradi
+  float dynamic_max_speed = max_speed;
+  
+  if (fabsf(error) < approach_zone) {
+      dynamic_max_speed = max_speed * (fabsf(error) / approach_zone);
+      if (dynamic_max_speed < 1.0f) dynamic_max_speed = 1.0f; // Evita lo stallo a bassa velocità
+  }
+
+  if (required_speed > dynamic_max_speed) required_speed = dynamic_max_speed;
+  if (required_speed < -dynamic_max_speed) required_speed = -dynamic_max_speed;
+
+  stepper->_last_error = error;
+
+  stepper_command(required_speed, stepper->steps_per_unit, htim, channel, dir_port, dir_pin, stepper->_dir);
 }
