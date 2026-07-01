@@ -222,6 +222,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
           enc_lin_Y._last_converted_value = enc_lin_Y._converted_value;
           enc_lin_Y._last_velocity = enc_lin_Y._velocity;
 
+          // continuity
+          axis_X._target_pos += axis_X._target_vel * dt_pos;
+          axis_Y._target_pos += axis_Y._target_vel * dt_pos;
+
           // PID pos
           axis_X._pid_pos._setpoint = axis_X._target_pos;
           axis_X._pid_vel._setpoint = PID_compute_pos(&axis_X._pid_pos, enc_lin_X._converted_value, dt_pos) + axis_X._target_vel;
@@ -378,8 +382,8 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
     if (packet.start == 0xAA) {
       machine_state = RUN;
         
-      axis_X._target_pos = packet.x;
-      axis_Y._target_pos = packet.y;
+      axis_X._target_pos = (axis_X._target_pos * 0.1f) + (packet.x * 0.9f);
+      axis_Y._target_pos = (axis_Y._target_pos * 0.1f) + (packet.y * 0.9f);
       axis_Z._target = packet.z;
       axis_X._target_vel = packet.vx;
       axis_Y._target_vel = packet.vy;
