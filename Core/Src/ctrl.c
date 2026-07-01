@@ -151,59 +151,56 @@ void stepper_command(float speed,  float steps_per_unit, TIM_HandleTypeDef *htim
         htim->Instance->CNT = 0;
     }
 
-    if (htim->Instance == TIM16) {
-        HAL_TIMEx_PWMN_Start(htim, channel);
-    } else {
-        HAL_TIM_PWM_Start(htim, channel);
+    if (!(htim->Instance->CR1 & TIM_CR1_CEN)) {
+        if (htim->Instance == TIM16) {
+            HAL_TIMEx_PWMN_Start(htim, channel);
+        } else {
+            HAL_TIM_PWM_Start(htim, channel);
+        }
     }
 }
 
 void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, GPIO_TypeDef *dir_port, uint16_t dir_pin, float max_speed, float kp, float kd, float dt) {
 
-  float current_pos = stepper->_enc_rot->_converted_value;
-  float error = stepper->_target - current_pos;
+    float current_pos = stepper->_enc_rot->_converted_value;
+    float error = stepper->_target - current_pos;
 
-  float step_deg = 1.0f / stepper->steps_per_unit; 
-    float tolerance = step_deg * 0.1f; 
+    float step_deg = 1.0f / stepper->steps_per_unit; 
+        float tolerance = step_deg * 0.1f; 
 
-  if (fabsf(error) < tolerance) {
-      stepper_command(0.0f, stepper->steps_per_unit, htim, channel, dir_port, dir_pin, stepper->_dir);
-      stepper->_current_speed_hz = 0.0f;
-      stepper->_last_error = error;
-      stepper -> _in_position = 1;
-      return; 
-  }
+    if (fabsf(error) < tolerance) {
+        stepper_command(0.0f, stepper->steps_per_unit, htim, channel, dir_port, dir_pin, stepper->_dir);
+        stepper->_current_speed_hz = 0.0f;
+        stepper->_last_error = error;
+        stepper -> _in_position = 1;
+        return; 
+    }
 
-  float derivative = -stepper->_enc_rot->_velocity; 
-  float required_speed = (error * kp) + (derivative * kd);
-  float approach_zone = 5.0f; 
-  float dynamic_max_speed = max_speed;
-  
-  if (fabsf(error) < approach_zone) {
-      dynamic_max_speed = max_speed * (fabsf(error) / approach_zone);
-      if (dynamic_max_speed < 1.0f) dynamic_max_speed = 1.0f; 
-  }
+    float derivative = -stepper->_enc_rot->_velocity; 
+    float required_speed = (error * kp) + (derivative * kd);
+    float approach_zone = 5.0f; 
+    float dynamic_max_speed = max_speed;
+    
+    if (fabsf(error) < approach_zone) {
+        dynamic_max_speed = max_speed * (fabsf(error) / approach_zone);
+        if (dynamic_max_speed < 1.0f) dynamic_max_speed = 1.0f; 
+    }
 
-  if (required_speed > dynamic_max_speed) required_speed = dynamic_max_speed;
-  if (required_speed < -dynamic_max_speed) required_speed = -dynamic_max_speed;
+    if (required_speed > dynamic_max_speed) required_speed = dynamic_max_speed;
+    if (required_speed < -dynamic_max_speed) required_speed = -dynamic_max_speed;
 
-  float max_accel = 1.2f;
-  float max_delta_v = max_accel * dt; 
-  
-  if (required_speed > stepper->_target_speed + max_delta_v) {
-      required_speed = stepper->_target_speed + max_delta_v;
-  } else if (required_speed < stepper->_target_speed - max_delta_v) {
-      required_speed = stepper->_target_speed - max_delta_v;
-  }
-  
-  stepper->_target_speed = required_speed; 
+    float max_accel = 1.2f;
+    float max_delta_v = max_accel * dt; 
+    
+    if (required_speed > stepper->_target_speed + max_delta_v) {
+        required_speed = stepper->_target_speed + max_delta_v;
+    } else if (required_speed < stepper->_target_speed - max_delta_v) {
+        required_speed = stepper->_target_speed - max_delta_v;
+    }
+    
+    stepper->_target_speed = required_speed; 
+    stepper->_last_error = error;
+    stepper -> _current_speed_hz = required_speed;
 
-  if(stepper -> _enc_rot -> _converted_value < 0 && required_speed < 0){
-    required_speed = -required_speed;
-  }
-  
-  stepper->_last_error = error;
-  stepper -> _current_speed_hz = required_speed;
-
-  stepper_command(required_speed, stepper->steps_per_unit, htim, channel, dir_port, dir_pin, stepper->_dir);
+    stepper_command(required_speed, stepper->steps_per_unit, htim, channel, dir_port, dir_pin, stepper->_dir);
 }
