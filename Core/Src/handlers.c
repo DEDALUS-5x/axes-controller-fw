@@ -164,9 +164,16 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
         if (machine_state == HOMING || machine_state == RUN) {
               // stepper_loop(&axis_Z, &htim17, TIM_CHANNEL_1, DIR_Z1_GPIO_Port, DIR_Z1_Pin, 2.0f, 1.0f);
-              stepper_loop(&axis_A1, &htim15, TIM_CHANNEL_1, DIR_P1_GPIO_Port, DIR_P1_Pin, 10.0f, 10.0f, 0.01f, IN_PERIOD);
-              stepper_loop(&axis_A2, &htim16, TIM_CHANNEL_1, DIR_P2_GPIO_Port, DIR_P2_Pin, 10.0f, 10.0f, 0.01f, IN_PERIOD);
-              stepper_loop(&axis_C, &htim8, TIM_CHANNEL_2, DIR_Y_GPIO_Port, DIR_Y_Pin, 1.0f, 1.0f, 0.001f, IN_PERIOD);
+              if(axis_A1._in_position == 0){
+                stepper_loop(&axis_A1, &htim15, TIM_CHANNEL_1, DIR_P1_GPIO_Port, DIR_P1_Pin, 10.0f, 10.0f, 0.01f, IN_PERIOD);
+              }
+              
+              if(axis_A2._in_position == 0){
+                stepper_loop(&axis_A2, &htim16, TIM_CHANNEL_1, DIR_P2_GPIO_Port, DIR_P2_Pin, 10.0f, 10.0f, 0.01f, IN_PERIOD);
+              }
+              if(axis_C._in_position == 0){
+                stepper_loop(&axis_C, &htim8, TIM_CHANNEL_2, DIR_Y_GPIO_Port, DIR_Y_Pin, 5.0f, 1.0f, 0.001f, IN_PERIOD);
+              }
           } else {
               axis_Z._target = enc_rot_Z._converted_value;
               __HAL_TIM_SET_COMPARE(&htim17, TIM_CHANNEL_1, 0);
@@ -374,11 +381,22 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
       axis_X._target_pos = packet.x;
       axis_Y._target_pos = packet.y;
       axis_Z._target = packet.z;
-      axis_A1._target = packet.a;
-      axis_A2._target = packet.a;
-      axis_C._target = packet.c;
       axis_X._target_vel = packet.vx;
       axis_Y._target_vel = packet.vy;
+
+      // steppers positioning management
+      if(axis_A1._target != packet.a){
+        axis_A1._in_position = 0;
+        axis_A1._target = packet.a;
+      }
+      if(axis_A2._target != packet.a){
+        axis_A2._in_position = 0;
+        axis_A2._target = packet.a;
+      }
+      if(axis_C._target != packet.c){
+        axis_C._in_position = 0;
+        axis_C._target = packet.c;
+      }
       
     }
     // homing procedure
@@ -393,6 +411,10 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
       axis_A1._target = 0.0f;
       axis_A2._target = 0.0f;
       axis_C._target = 0.0f;
+
+      axis_A1._in_position = 0;
+      axis_A2._in_position = 0;
+      axis_C._in_position = 0;
 
       // motors command already embedded in tim6 handler. just keep a constnat pid output (pid disabled)
     }

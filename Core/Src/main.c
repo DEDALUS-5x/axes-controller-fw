@@ -221,12 +221,14 @@ int main(void)
   axis_A1._enc_rot -> _offset = 0.0f;
   axis_A1.steps_per_unit = 8.888889f;
   axis_A1._dir = 0;
+  axis_A1._in_position = 0;
   HAL_TIM_PWM_Start(&htim15, TIM_CHANNEL_1);
 
   axis_A2._enc_rot = &enc_rot_A;
   axis_A2._enc_rot -> _offset = 0.0f;
   axis_A2.steps_per_unit = 8.888889f;
   axis_A2._dir = 1; // reverse direction
+  axis_A2._in_position = 0;
   HAL_TIMEx_PWMN_Start(&htim16, TIM_CHANNEL_1);  // HAL_TIM_IC_Start(&htim4, TIM_CHANNEL_1); // period
   // HAL_TIM_IC_Start(&htim4, TIM_CHANNEL_2); // duty
 
@@ -242,6 +244,7 @@ int main(void)
   axis_C._enc_rot -> _offset = 0.0f;
   axis_C.steps_per_unit = 8.888889f;
   axis_C._dir = 0;
+  axis_C._in_position = 0;
   HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_2);
   // HAL_TIM_IC_Start(&htim23, TIM_CHANNEL_1); // period
   // HAL_TIM_IC_Start(&htim23, TIM_CHANNEL_2); // duty
@@ -392,8 +395,8 @@ int main(void)
   axis_X._target_vel = 0.0f;
   axis_Y._target_pos = 0.0f;
   axis_Y._target_vel = 0.0f;
-  axis_A1._target = 0.0f;
-  axis_A2._target = 0.0f;
+  axis_A1._target = 30.0f;
+  axis_A2._target = 30.0f;
   axis_C._target = 0.0f;
   // let's start bitches
   HAL_TIM_Base_Start_IT(&htim6);
@@ -411,16 +414,6 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-
-    /*
-    if(axis_X._enc_lin->_converted_value < -29.0f){
-      axis_X._target_pos = 30.0f;
-    }
-    if(axis_X._enc_lin -> _converted_value > 29.0f){
-      axis_X._target_pos = -30.0f;
-    }
-    */
-
 
     __disable_irq();
     // uint16_t raw_y = spi2_rx_buf[0];

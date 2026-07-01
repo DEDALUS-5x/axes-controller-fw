@@ -119,7 +119,7 @@ void stepper_command(float speed,  float steps_per_unit, TIM_HandleTypeDef *htim
         HAL_GPIO_WritePin(dir_port, dir_pin, (speed <= 0.0f) ? GPIO_PIN_SET : GPIO_PIN_RESET);
     }
 
-    float freq = fabsf(speed) * steps_per_unit; // steps per unit (10 steps per mm)
+    float freq = fabsf(speed) * steps_per_unit;
     if (freq < 1.2f) {
         __HAL_TIM_SET_COMPARE(htim, channel, 0); 
         return;
@@ -163,33 +163,25 @@ void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, G
   float current_pos = stepper->_enc_rot->_converted_value;
   float error = stepper->_target - current_pos;
 
-  // 1. LA DEADBAND FISICA (Il Segreto per gli Stepper)
-  // Calcoliamo quanti gradi copre un singolo micropasso
-  float physical_step_deg = 1.0f / stepper->steps_per_unit; 
-  
-  // La tolleranza deve essere ~1.5 volte il singolo passo fisico (circa 0.17 gradi)
-  float tolerance = physical_step_deg * 1.5f; 
+  float step_deg = 1.0f / stepper->steps_per_unit; 
+    float tolerance = step_deg * 0.25f; 
 
   if (fabsf(error) < tolerance) {
-      // Siamo sul "dente magnetico" più vicino al target. Spegniamo gli impulsi.
-      // Il driver stepper manterrà la coppia di tenuta (Holding Torque) automaticamente.
       stepper_command(0.0f, stepper->steps_per_unit, htim, channel, dir_port, dir_pin, stepper->_dir);
       stepper->_current_speed_hz = 0.0f;
       stepper->_last_error = error;
+      stepper -> _in_position = 1;
       return; 
   }
 
-  // 2. CONTROLLO PD
   float derivative = -stepper->_enc_rot->_velocity; 
   float required_speed = (error * kp) + (derivative * kd);
-
-  // 3. FRENO DI AVVICINAMENTO
-  float approach_zone = 5.0f; // Gradi
+  float approach_zone = 5.0f; 
   float dynamic_max_speed = max_speed;
   
   if (fabsf(error) < approach_zone) {
       dynamic_max_speed = max_speed * (fabsf(error) / approach_zone);
-      if (dynamic_max_speed < 1.0f) dynamic_max_speed = 1.0f; // Evita lo stallo a bassa velocità
+      if (dynamic_max_speed < 1.0f) dynamic_max_speed = 1.0f; 
   }
 
   if (required_speed > dynamic_max_speed) required_speed = dynamic_max_speed;
