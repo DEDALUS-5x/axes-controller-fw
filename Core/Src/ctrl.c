@@ -187,6 +187,17 @@ void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, G
   if (required_speed > dynamic_max_speed) required_speed = dynamic_max_speed;
   if (required_speed < -dynamic_max_speed) required_speed = -dynamic_max_speed;
 
+  float max_accel = 5.0f;
+  float max_delta_v = max_accel * dt; 
+  
+  if (required_speed > stepper->_target_speed + max_delta_v) {
+      required_speed = stepper->_target_speed + max_delta_v;
+  } else if (required_speed < stepper->_target_speed - max_delta_v) {
+      required_speed = stepper->_target_speed - max_delta_v;
+  }
+  
+  stepper->_target_speed = required_speed; 
+
   stepper->_last_error = error;
 
   stepper_command(required_speed, stepper->steps_per_unit, htim, channel, dir_port, dir_pin, stepper->_dir);

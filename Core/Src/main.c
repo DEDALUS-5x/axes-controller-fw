@@ -395,10 +395,10 @@ int main(void)
   axis_X._target_vel = 0.0f;
   axis_Y._target_pos = 0.0f;
   axis_Y._target_vel = 0.0f;
-  axis_A1._target = 20.0f;
-  axis_A2._target = 20.0f;
-  axis_C._target = 0.0f;
-  
+  axis_A1._target = 2.0f;
+  axis_A2._target = 2.0f;
+  axis_C._target = 1.0f;
+
   // let's start bitches
   HAL_TIM_Base_Start_IT(&htim6);
   HAL_Delay(10);
