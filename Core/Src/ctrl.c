@@ -112,7 +112,7 @@ void motor_command(Axis *axis, TIM_HandleTypeDef *htim, uint32_t channel1, uint3
 
 
 void stepper_command(float speed,  float steps_per_unit, TIM_HandleTypeDef *htim, uint32_t channel, GPIO_TypeDef *dir_port, uint16_t dir_pin, uint8_t dir) {
-    
+
     if(dir == 0) {
         HAL_GPIO_WritePin(dir_port, dir_pin, (speed <= 0.0f) ? GPIO_PIN_RESET : GPIO_PIN_SET);
     } else {
@@ -198,6 +198,10 @@ void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, G
   
   stepper->_target_speed = required_speed; 
 
+  if(stepper -> _enc_rot -> _converted_value < 0 && required_speed < 0){
+    required_speed = -required_speed;
+  }
+  
   stepper->_last_error = error;
   stepper -> _current_speed_hz = required_speed;
 
