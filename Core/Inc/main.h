@@ -97,8 +97,6 @@ void Error_Handler(void);
 #define MY1_IN2_GPIO_Port GPIOE
 #define DIR_Y_Pin GPIO_PIN_10
 #define DIR_Y_GPIO_Port GPIOD
-#define STEP_Y_Pin GPIO_PIN_11
-#define STEP_Y_GPIO_Port GPIOD
 #define LED_2_Pin GPIO_PIN_12
 #define LED_2_GPIO_Port GPIOD
 #define LED_1_Pin GPIO_PIN_13
@@ -114,10 +112,8 @@ void Error_Handler(void);
 #define ES_X_Pin GPIO_PIN_7
 #define ES_X_GPIO_Port GPIOG
 #define ES_X_EXTI_IRQn EXTI9_5_IRQn
-#define MY2_IN1_Pin GPIO_PIN_6
-#define MY2_IN1_GPIO_Port GPIOC
-#define MY2_IN2_Pin GPIO_PIN_7
-#define MY2_IN2_GPIO_Port GPIOC
+#define STEP_Y_Pin GPIO_PIN_7
+#define STEP_Y_GPIO_Port GPIOC
 #define MX_A_Pin GPIO_PIN_15
 #define MX_A_GPIO_Port GPIOA
 #define STEP_P1_Pin GPIO_PIN_12

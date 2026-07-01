@@ -398,7 +398,7 @@ int main(void)
   // let's start bitches
   HAL_TIM_Base_Start_IT(&htim6);
   HAL_Delay(10);
-    HAL_GPIO_WritePin(EN_STEPPERS_GPIO_Port, EN_STEPPERS_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(EN_STEPPERS_GPIO_Port, EN_STEPPERS_Pin, GPIO_PIN_RESET);
 
 
   /* USER CODE END 2 */
