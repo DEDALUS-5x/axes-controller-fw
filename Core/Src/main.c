@@ -171,7 +171,7 @@ int main(void)
   axis_X._enc_lin = &enc_lin_X;
   axis_X._pwm_register = &TIM1->CCR1;
   axis_X._enc_rot -> _offset = 0.0f;
-  PID_init(&axis_X._pid_pos, 100.0f, 0.01f, 0.001f, 200.0f); // 300mm/min -> 5mm/s
+  PID_init(&axis_X._pid_pos, 100.0f, 0.01f, 0.001f, 50.0f); // 300mm/min -> 5mm/s
   PID_init(&axis_X._pid_vel, 40.0f, 0.01f, 0.001f, 10000.0f);
   HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_ALL);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1); 
@@ -189,12 +189,12 @@ int main(void)
   axis_Y._enc_lin = &enc_lin_Y;
   axis_Y._pwm_register = &TIM1->CCR3;
   axis_Y._enc_rot -> _offset = 0.0f;
-  PID_init(&axis_Y._pid_pos, 20.0f, 0.001f, 0.001f, 100.0f);
+  PID_init(&axis_Y._pid_pos, 100.0f, 0.01f, 0.001f, 75.0f);
   // PID_init(&axis_Y._pid_vel, 366.4f, 0.0916f, 0.000916f, 3000.0f);
-  PID_init(&axis_Y._pid_vel, 80.0f, 0.001f, 0.001f, 10000.0f);
+  PID_init(&axis_Y._pid_vel, 40.0f, 0.01f, 0.001f, 10000.0f);
   HAL_TIM_Encoder_Start(&htim5, TIM_CHANNEL_ALL);
-  // HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
-  // HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
 
   /*
     _____     _          _     
@@ -243,7 +243,7 @@ int main(void)
   axis_C._enc_rot = &enc_rot_C;
   axis_C._enc_rot -> _offset = 0.0f;
   axis_C.steps_per_unit = 8.888889f;
-  axis_C._dir = 0;
+  axis_C._dir = 1;
   axis_C._in_position = 0;
   HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_2);
   // HAL_TIM_IC_Start(&htim23, TIM_CHANNEL_1); // period
@@ -391,19 +391,18 @@ int main(void)
 
   machine_state = RUN;
 
-  axis_X._target_pos = 0.0f;
+  axis_X._target_pos = 10.0f;
   axis_X._target_vel = 0.0f;
-  axis_Y._target_pos = 0.0f;
+  axis_Y._target_pos = -10.0f;
   axis_Y._target_vel = 0.0f;
-  axis_A1._target = 2.0f;
-  axis_A2._target = 2.0f;
-  axis_C._target = 1.0f;
+  axis_A1._target = 20.0f;
+  axis_A2._target = 20.0f;
+  axis_C._target = 10.1f;
 
   // let's start bitches
   HAL_TIM_Base_Start_IT(&htim6);
   HAL_Delay(10);
   HAL_GPIO_WritePin(EN_STEPPERS_GPIO_Port, EN_STEPPERS_Pin, GPIO_PIN_RESET);
-
 
   /* USER CODE END 2 */
 

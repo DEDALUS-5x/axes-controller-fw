@@ -164,7 +164,7 @@ void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, G
   float error = stepper->_target - current_pos;
 
   float step_deg = 1.0f / stepper->steps_per_unit; 
-    float tolerance = step_deg * 0.25f; 
+    float tolerance = step_deg * 0.1f; 
 
   if (fabsf(error) < tolerance) {
       stepper_command(0.0f, stepper->steps_per_unit, htim, channel, dir_port, dir_pin, stepper->_dir);
@@ -187,7 +187,7 @@ void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, G
   if (required_speed > dynamic_max_speed) required_speed = dynamic_max_speed;
   if (required_speed < -dynamic_max_speed) required_speed = -dynamic_max_speed;
 
-  float max_accel = 5.0f;
+  float max_accel = 1.2f;
   float max_delta_v = max_accel * dt; 
   
   if (required_speed > stepper->_target_speed + max_delta_v) {

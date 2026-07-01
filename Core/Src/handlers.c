@@ -172,7 +172,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
                 stepper_loop(&axis_A2, &htim16, TIM_CHANNEL_1, DIR_P2_GPIO_Port, DIR_P2_Pin, 10.0f, 10.0f, 0.01f, IN_PERIOD);
               }
               if(axis_C._in_position == 0){
-                stepper_loop(&axis_C, &htim8, TIM_CHANNEL_2, DIR_Y_GPIO_Port, DIR_Y_Pin, 90.0f, 10.0f, 0.01f, IN_PERIOD);
+                stepper_loop(&axis_C, &htim8, TIM_CHANNEL_2, DIR_Y_GPIO_Port, DIR_Y_Pin, 1.0f, 1.0f, 0.01f, IN_PERIOD);
               }
           } else {
               axis_Z._target = enc_rot_Z._converted_value;
@@ -224,11 +224,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
           // PID pos
           axis_X._pid_pos._setpoint = axis_X._target_pos;
-          axis_X._pid_vel._setpoint = -PID_compute_pos(&axis_X._pid_pos, enc_lin_X._converted_value, dt_pos) + axis_X._target_vel;
+          axis_X._pid_vel._setpoint = PID_compute_pos(&axis_X._pid_pos, enc_lin_X._converted_value, dt_pos) + axis_X._target_vel;
           axis_Y._pid_pos._setpoint = axis_Y._target_pos;
           axis_Y._pid_vel._setpoint = PID_compute_pos(&axis_Y._pid_pos, enc_lin_Y._converted_value, dt_pos) + axis_Y._target_vel;
-          axis_X._pid_vel._setpoint += axis_X._target_vel;
-          axis_Y._pid_vel._setpoint += axis_Y._target_vel;
+          // axis_X._pid_vel._setpoint += axis_X._target_vel;
+          // axis_Y._pid_vel._setpoint += axis_Y._target_vel;
 
           // positioning axes
           // update_pwm_encoder(&enc_rot_C, &htim23, dt_pos);

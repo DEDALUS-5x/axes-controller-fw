@@ -115,12 +115,19 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : SPI1_CSS_Pin SPI6_CSS_Pin */
-  GPIO_InitStruct.Pin = SPI1_CSS_Pin|SPI6_CSS_Pin;
+  /*Configure GPIO pin : SPI1_CSS_Pin */
+  GPIO_InitStruct.Pin = SPI1_CSS_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+  HAL_GPIO_Init(SPI1_CSS_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : SPI6_CSS_Pin */
+  GPIO_InitStruct.Pin = SPI6_CSS_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
+  HAL_GPIO_Init(SPI6_CSS_GPIO_Port, &GPIO_InitStruct);
 
   /*AnalogSwitch Config */
   HAL_SYSCFG_AnalogSwitchConfig(SYSCFG_SWITCH_PC3, SYSCFG_SWITCH_PC3_CLOSE);
