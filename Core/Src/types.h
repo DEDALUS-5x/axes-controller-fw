@@ -63,7 +63,6 @@ typedef struct {
     float _target_speed;
     float _last_error;
     uint8_t _dir;
-    uint8_t _a;
 
 } Stepper;
 

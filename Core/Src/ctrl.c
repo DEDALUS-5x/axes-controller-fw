@@ -164,10 +164,6 @@ void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, G
   float required_speed = (error * kp) + (derivative * kd);
   if (required_speed > max_speed) required_speed = max_speed;
   if (required_speed < -max_speed) required_speed = -max_speed;
-
-  if(stepper -> _a == 1) {
-    HAL_GPIO_WritePin(DIR_P2_GPIO_Port, DIR_P2_Pin, (required_speed >= 0.0f) ? GPIO_PIN_RESET : GPIO_PIN_SET);
-  }
   
   float tolerance = (stepper->_current_speed_hz == 0.0f) ? 0.5f : 0.2f; 
   if (fabsf(error) < tolerance) {
