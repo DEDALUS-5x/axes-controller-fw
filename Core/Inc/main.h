@@ -79,10 +79,6 @@ void Error_Handler(void);
 #define H_NTC_GPIO_Port GPIOA
 #define SPI3_CSS_Pin GPIO_PIN_4
 #define SPI3_CSS_GPIO_Port GPIOA
-#define MY2_A_Pin GPIO_PIN_6
-#define MY2_A_GPIO_Port GPIOA
-#define MY2_B_Pin GPIO_PIN_7
-#define MY2_B_GPIO_Port GPIOA
 #define DIR_F_Pin GPIO_PIN_7
 #define DIR_F_GPIO_Port GPIOE
 #define STEP_F_Pin GPIO_PIN_8
@@ -128,6 +124,8 @@ void Error_Handler(void);
 #define SPI6_CSS_GPIO_Port GPIOG
 #define MX_B_Pin GPIO_PIN_3
 #define MX_B_GPIO_Port GPIOB
+#define STEP_Z2_Pin GPIO_PIN_5
+#define STEP_Z2_GPIO_Port GPIOB
 #define STEP_P2_Pin GPIO_PIN_6
 #define STEP_P2_GPIO_Port GPIOB
 #define STEP_Z1_Pin GPIO_PIN_9
