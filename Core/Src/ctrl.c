@@ -79,7 +79,7 @@ void PID_compute_vel(Axis *axis, float dt) {
 
   float stiction_pwm = 0.0f;
   
-  float deadband = 500.0f; 
+  float deadband = 1000.0f; 
     if (axis->_target_vel > 0.02f) {
       stiction_pwm = deadband;
   } else if (axis->_target_vel < -0.02f) {
@@ -207,7 +207,7 @@ if (required_speed > dynamic_max_speed) required_speed = dynamic_max_speed;
 if (required_speed < -dynamic_max_speed) required_speed = -dynamic_max_speed;
 
 // 4. RAMPA DI ACCELERAZIONE/DECELERAZIONE (I Freni)
-float max_accel = 250.0f; // DEVE essere alto, altrimenti non frena in tempo e oscilla!
+float max_accel = 300.0f; // DEVE essere alto, altrimenti non frena in tempo e oscilla!
 float max_delta_v = max_accel * dt; 
 
 if (required_speed > stepper->_target_speed + max_delta_v) {

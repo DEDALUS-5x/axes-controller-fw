@@ -46,7 +46,7 @@ void update_rotary_encoder(Encoder *enc, uint16_t raw_spi, float dt){
 
   float instant_vel = diff / dt;
   
-  enc -> _velocity = (enc->_velocity * 0.8) + (instant_vel * 0.2f);
+  enc -> _velocity = (enc->_velocity * 0.9) + (instant_vel * 0.1f);
   enc -> _last_converted_value = enc->_converted_value;
   enc -> _acceleration = enc -> _acceleration * 0.95f + ((enc -> _velocity - enc -> _last_velocity) / dt) * 0.05f;
   enc -> _last_velocity = enc -> _velocity;
