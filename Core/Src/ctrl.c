@@ -79,7 +79,7 @@ void PID_compute_vel(Axis *axis, float dt) {
 
   float stiction_pwm = 0.0f;
   
-  float deadband = 1000.0f; 
+  float deadband = 400.0f; 
     if (axis->_target_vel > 0.02f) {
       stiction_pwm = deadband;
   } else if (axis->_target_vel < -0.02f) {

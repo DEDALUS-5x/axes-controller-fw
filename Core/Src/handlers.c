@@ -221,7 +221,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
           // Y
           enc_lin_Y._converted_value = (float)((int32_t)TIM5 -> CNT) * 0.01f;        
           float inst_vel_y = (enc_lin_Y._converted_value - enc_lin_Y._last_converted_value) / dt_pos;
-          enc_lin_Y._velocity = (enc_lin_Y._velocity * 0.8f) + (inst_vel_y * 0.2f);
+          enc_lin_Y._velocity = (enc_lin_Y._velocity * 0.9f) + (inst_vel_y * 0.1f);
           float inst_acc_y = (enc_lin_Y._velocity - enc_lin_Y._last_velocity) / dt_pos;
           enc_lin_Y._acceleration = (enc_lin_Y._acceleration * 0.8f) + (inst_acc_y * 0.2f);
 
@@ -391,7 +391,7 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
       machine_state = RUN;
         
       axis_X._target_pos = (axis_X._target_pos * 0.3f) + (packet.x * 0.7f);
-      axis_Y._target_pos = (axis_Y._target_pos * 0.3f) + (packet.y * 0.7f);
+      axis_Y._target_pos = (axis_Y._target_pos * 0.5f) + (packet.y * 0.5f);
       axis_Z._target = packet.z;
       axis_X._target_vel = packet.vx;
       axis_Y._target_vel = packet.vy;
