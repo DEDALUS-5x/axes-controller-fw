@@ -42,6 +42,7 @@ extern SPI_HandleTypeDef hspi3;
 extern SPI_HandleTypeDef hspi4;
 extern SPI_HandleTypeDef hspi6;
 extern TIM_HandleTypeDef htim1;
+extern TIM_HandleTypeDef htim3;
 extern TIM_HandleTypeDef htim4;
 extern TIM_HandleTypeDef htim6;
 extern TIM_HandleTypeDef htim8;
@@ -61,7 +62,7 @@ extern uint16_t spi6_tx_buf[16];
 
 // extern uint16_t spi4_single_buf[16];
 extern Axis axis_X, axis_Y;
-extern Stepper axis_Z, axis_A1, axis_A2, axis_C;
+extern Stepper axis_Z1, axis_Z2, axis_A1, axis_A2, axis_C;
 extern float current_values[3];
 extern volatile uint8_t current_axis_idx;
 

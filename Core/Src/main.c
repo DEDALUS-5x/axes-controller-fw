@@ -75,7 +75,7 @@ float current_values[3];
 
 uint8_t machine_state = INIT;
 Axis axis_X, axis_Y;
-Stepper axis_Z, axis_A1, axis_A2, axis_C;
+Stepper axis_Z1, axis_Z2, axis_A1, axis_A2, axis_C;
 Encoder enc_rot_X, enc_rot_Y, enc_rot_Z, enc_rot_A, enc_rot_C, enc_rot_F;
 Encoder enc_lin_X, enc_lin_Y;
 
@@ -205,12 +205,19 @@ int main(void)
    /____| /_/   \_\/_/\_\_|___/
                                
   */
-  axis_Z._enc_rot = &enc_rot_Z;
-  axis_Z._enc_rot -> _offset = 0.0f;
-  axis_Z._enc_rot -> _converted_value = 0.0f;
-  axis_Z._target = 0.0f;
-  axis_Z.steps_per_unit = 400.0f;
+  axis_Z1._enc_rot = &enc_rot_Z;
+  axis_Z1._enc_rot -> _offset = 0.0f;
+  axis_Z1._enc_rot -> _converted_value = 0.0f;
+  axis_Z1._target = 0.0f;
+  axis_Z1.steps_per_unit = 400.0f;
   HAL_TIM_PWM_Start(&htim17, TIM_CHANNEL_1); 
+
+  axis_Z2._enc_rot = &enc_rot_Z;
+  axis_Z2._enc_rot -> _offset = 0.0f;
+  axis_Z2._enc_rot -> _converted_value = 0.0f;
+  axis_Z2._target = 0.0f;
+  axis_Z2.steps_per_unit = 400.0f;
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
 
   /*
        _         _          _     
@@ -403,7 +410,8 @@ int main(void)
   axis_A1._target = 1.0f;
   axis_A2._target = 1.0f;
   axis_C._target = 0.0f;
-  axis_Z._target = 100000.0f;
+  axis_Z1._target = 100000.0f;
+  axis_Z2._target = 100000.0f;
 
   // let's start bitches
   HAL_TIM_Base_Start_IT(&htim6);

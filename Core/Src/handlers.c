@@ -163,9 +163,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
         }
 
         if (machine_state == HOMING || machine_state == RUN) {
-              // stepper_loop(&axis_Z, &htim17, TIM_CHANNEL_1, DIR_Z1_GPIO_Port, DIR_Z1_Pin, 20.0f, 2.0f, 0.01f, dt);
-              stepper_command(2.0f, axis_Z.steps_per_unit, &htim17, TIM_CHANNEL_1, DIR_Z1_GPIO_Port, DIR_Z1_Pin, 0);
-              enc_rot_Z._converted_value += (axis_Z._current_speed_hz * dt_pos);
+              // stepper_loop(&axis_Z1, &htim17, TIM_CHANNEL_1, DIR_Z1_GPIO_Port, DIR_Z1_Pin, 20.0f, 2.0f, 0.01f, dt);
+              stepper_command(2.0f, axis_Z1.steps_per_unit, &htim17, TIM_CHANNEL_1, DIR_Z1_GPIO_Port, DIR_Z1_Pin, 0);
+              enc_rot_Z._converted_value += (axis_Z1._current_speed_hz * dt);
               // stepper_loop(&axis_A1, &htim15, TIM_CHANNEL_1, DIR_P1_GPIO_Port, DIR_P1_Pin, 10.0f, 10.0f, 0.01f, dt);
               stepper_loop(&axis_A2, &htim16, TIM_CHANNEL_1, DIR_P2_GPIO_Port, DIR_P2_Pin, 10.0f, 10.0f, 0.01f, dt);
               stepper_command(axis_A2._current_speed_hz, axis_A1.steps_per_unit, &htim15, TIM_CHANNEL_1, DIR_P1_GPIO_Port, DIR_P1_Pin, axis_A1._dir);
@@ -184,9 +184,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
               }
                 */
           } else {
-              axis_Z._target = enc_rot_Z._converted_value;
+              axis_Z1._target = enc_rot_Z._converted_value;
+              axis_Z2._target = enc_rot_Z._converted_value;
               __HAL_TIM_SET_COMPARE(&htim17, TIM_CHANNEL_1, 0);
-              axis_Z._current_speed_hz = 0.0f;
+              __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, 0);
+              axis_Z1._current_speed_hz = 0.0f;
+              axis_Z2._current_speed_hz = 0.0f;
 
               __HAL_TIM_SET_COMPARE(&htim15, TIM_CHANNEL_1, 0);
               axis_A1._current_speed_hz = 0.0f;
@@ -260,7 +263,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
           tx_packet.c = enc_rot_C._converted_value;
           tx_packet.vx = enc_lin_X._velocity;
           tx_packet.vy = enc_lin_Y._velocity;
-          tx_packet.vz = axis_Z._current_speed_hz * 8.0f / 360.0f;
+          tx_packet.vz = axis_Z1._current_speed_hz * 8.0f / 360.0f;
           tx_packet.va = enc_rot_A._velocity;
           tx_packet.vc = enc_rot_C._velocity;
           tx_packet.ax = enc_lin_X._acceleration;
@@ -271,7 +274,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
           float ex = axis_X._target_pos - tx_packet.x;
           float ey = axis_Y._target_pos - tx_packet.y;
-          float ez = axis_Z._target - tx_packet.z;
+          float ez = axis_Z1._target - tx_packet.z;
           tx_packet.error = sqrtf((ex * ex) + (ey * ey) + (ez * ez));
 
           uint8_t calc_check = 0;
@@ -392,7 +395,8 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
         
       axis_X._target_pos = (axis_X._target_pos * 0.3f) + (packet.x * 0.7f);
       axis_Y._target_pos = (axis_Y._target_pos * 0.5f) + (packet.y * 0.5f);
-      axis_Z._target = packet.z;
+      axis_Z1._target = packet.z;
+      axis_Z2._target = packet.z;
       axis_X._target_vel = packet.vx;
       axis_Y._target_vel = packet.vy;
 
@@ -419,7 +423,8 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
       machine_state = HOMING;
       axis_X._pid_vel._output = -1.0f;
       axis_Y._pid_vel._output = -1.0f;
-      axis_Z._target = 0.0f;
+      axis_Z1._target = 0.0f;
+      axis_Z2._target = 0.0f;
       axis_A1._target = 0.0f;
       axis_A2._target = 0.0f;
       axis_C._target = 0.0f;
@@ -509,8 +514,10 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
       enc_rot_Z._turns = 0;
       enc_rot_Z._converted_value = 0.0f;
 
-      axis_Z._target = 0.0f;
-      axis_Z._current_speed_hz = 0.0f;
+      axis_Z1._target = 0.0f;
+      axis_Z2._target = 0.0f;
+      axis_Z1._current_speed_hz = 0.0f;
+      axis_Z2._current_speed_hz = 0.0f;
     }
 
     if(homing_counter == 3){
