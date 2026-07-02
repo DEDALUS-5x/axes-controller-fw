@@ -172,7 +172,7 @@ int main(void)
   axis_X._enc_lin = &enc_lin_X;
   axis_X._pwm_register = &TIM1->CCR1;
   axis_X._enc_rot -> _offset = 0.0f;
-  PID_init(&axis_X._pid_pos, 100.0f, 0.01f, 0.001f, 50.0f); // 300mm/min -> 5mm/s
+  PID_init(&axis_X._pid_pos, 100.0f, 0.01f, 0.001f, 100.0f); // 300mm/min -> 5mm/s
   PID_init(&axis_X._pid_vel, 40.0f, 0.01f, 0.001f, 8000.0f);
   HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_ALL);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1); 
@@ -396,14 +396,14 @@ int main(void)
 
   machine_state = RUN;
 
-  axis_X._target_pos = 0.0f;
+  axis_X._target_pos = 0.5f;
   axis_X._target_vel = 0.0f;
   axis_Y._target_pos = 0.0f;
   axis_Y._target_vel = 0.0f;
-  axis_A1._target = 10.0f;
-  axis_A2._target = 10.0f;
-  axis_C._target = 0.0f;
-  axis_Z._target = 50.0f;
+  axis_A1._target = 5.0f;
+  axis_A2._target = 5.0f;
+  axis_C._target = 80.0f;
+  axis_Z._target = 10.0f;
 
   // let's start bitches
   HAL_TIM_Base_Start_IT(&htim6);
@@ -422,7 +422,6 @@ int main(void)
     /* USER CODE BEGIN 3 */
 
     
-/*
     __disable_irq();
     // uint16_t raw_y = spi2_rx_buf[0];
     float pos_y = enc_lin_Y._converted_value;
@@ -433,12 +432,11 @@ int main(void)
 
     // char err_y = (raw_y & 0x4000) ? 'E' : 'O';
 
-  sprintf(serial_buf, "pos_y: %d | pos_x: %d | pos_a: %d | pos_c: %d | target_y: %d\r\n", (int)pos_y, (int)pos_x, (int)pos_a, (int)psos_c, (int)axis_Y._target_pos);
+  sprintf(serial_buf, "pos_y: %d | pos_x: %d | pos_a: %d | pos_c: %d | machine state: %d\r\n", (int)pos_y, (int)pos_x, (int)pos_a, (int)psos_c, (int)machine_state);
     // sprintf(serial_buf, "RAW Y[0]: 0x%04X (%c) | Pos Y: %d | LIN Y: %d\r\n", raw_y, err_y, (int)pos_y, (int)pos_lin);
     
     HAL_UART_Transmit(&huart1, (uint8_t*)serial_buf, strlen(serial_buf), 10);
     HAL_Delay(100);
-    */
     
 
   }
