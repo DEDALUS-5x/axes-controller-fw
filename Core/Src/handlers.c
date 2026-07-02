@@ -163,7 +163,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
         }
 
         if (machine_state == HOMING || machine_state == RUN) {
-              stepper_loop(&axis_Z, &htim17, TIM_CHANNEL_1, DIR_Z1_GPIO_Port, DIR_Z1_Pin, 2.0f, 1.0f, 0.01f, IN_PERIOD);
+              // stepper_loop(&axis_Z, &htim17, TIM_CHANNEL_1, DIR_Z1_GPIO_Port, DIR_Z1_Pin, 20.0f, 2.0f, 0.01f, dt);
+              stepper_command(2.0f, axis_Z.steps_per_unit, &htim17, TIM_CHANNEL_1, DIR_Z1_GPIO_Port, DIR_Z1_Pin, 0);
+              enc_rot_Z._converted_value += (axis_Z._current_speed_hz * dt_pos);
               // stepper_loop(&axis_A1, &htim15, TIM_CHANNEL_1, DIR_P1_GPIO_Port, DIR_P1_Pin, 10.0f, 10.0f, 0.01f, dt);
               stepper_loop(&axis_A2, &htim16, TIM_CHANNEL_1, DIR_P2_GPIO_Port, DIR_P2_Pin, 10.0f, 10.0f, 0.01f, dt);
               stepper_command(axis_A2._current_speed_hz, axis_A1.steps_per_unit, &htim15, TIM_CHANNEL_1, DIR_P1_GPIO_Port, DIR_P1_Pin, axis_A1._dir);
@@ -241,7 +243,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
           // update_pwm_encoder(&enc_rot_C, &htim23, dt_pos);
           // update_pwm_encoder(&enc_rot_A, &htim4, dt_pos);
 
-          enc_rot_Z._converted_value += (axis_Z._current_speed_hz * dt_pos);
           // enc_rot_A._converted_value += (axis_A1._current_speed_hz * dt_pos);
           // enc_rot_C._converted_value += (axis_C._current_speed_hz * dt_pos);
 

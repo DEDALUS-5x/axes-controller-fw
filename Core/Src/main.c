@@ -403,7 +403,7 @@ int main(void)
   axis_A1._target = 1.0f;
   axis_A2._target = 1.0f;
   axis_C._target = 0.0f;
-  axis_Z._target = 10.0f;
+  axis_Z._target = 100000.0f;
 
   // let's start bitches
   HAL_TIM_Base_Start_IT(&htim6);
