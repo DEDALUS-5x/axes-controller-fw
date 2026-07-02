@@ -172,8 +172,8 @@ int main(void)
   axis_X._enc_lin = &enc_lin_X;
   axis_X._pwm_register = &TIM1->CCR1;
   axis_X._enc_rot -> _offset = 0.0f;
-  PID_init(&axis_X._pid_pos, 100.0f, 0.01f, 0.001f, 80.0f); // 300mm/min -> 5mm/s
-  PID_init(&axis_X._pid_vel, 40.0f, 0.01f, 0.001f, 10000.0f);
+  PID_init(&axis_X._pid_pos, 100.0f, 0.01f, 0.001f, 50.0f); // 300mm/min -> 5mm/s
+  PID_init(&axis_X._pid_vel, 40.0f, 0.01f, 0.001f, 8000.0f);
   HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_ALL);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1); 
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
@@ -190,9 +190,9 @@ int main(void)
   axis_Y._enc_lin = &enc_lin_Y;
   axis_Y._pwm_register = &TIM1->CCR3;
   axis_Y._enc_rot -> _offset = 0.0f;
-  PID_init(&axis_Y._pid_pos, 120.0f, 0.05f, 0.001f, 75.0f);
+  PID_init(&axis_Y._pid_pos, 60.0f, 0.009f, 0.001f, 75.0f);
   // PID_init(&axis_Y._pid_vel, 366.4f, 0.0916f, 0.000916f, 3000.0f);
-  PID_init(&axis_Y._pid_vel, 40.0f, 0.0075f, 0.001f, 6000.0f);
+  PID_init(&axis_Y._pid_vel, 20.0f, 0.003f, 0.001f, 8000.0f);
   HAL_TIM_Encoder_Start(&htim5, TIM_CHANNEL_ALL);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
@@ -396,13 +396,13 @@ int main(void)
 
   machine_state = RUN;
 
-  axis_X._target_pos = 10.0f;
+  axis_X._target_pos = 0.0f;
   axis_X._target_vel = 0.0f;
-  axis_Y._target_pos = -10.0f;
+  axis_Y._target_pos = 0.0f;
   axis_Y._target_vel = 0.0f;
-  axis_A1._target = 0.1f;
-  axis_A2._target = 0.1f;
-  axis_C._target = 0.1f;
+  axis_A1._target = 10.0f;
+  axis_A2._target = 10.0f;
+  axis_C._target = 0.0f;
   axis_Z._target = 50.0f;
 
   // let's start bitches
@@ -422,7 +422,7 @@ int main(void)
     /* USER CODE BEGIN 3 */
 
     
-
+/*
     __disable_irq();
     // uint16_t raw_y = spi2_rx_buf[0];
     float pos_y = enc_lin_Y._converted_value;
@@ -438,6 +438,7 @@ int main(void)
     
     HAL_UART_Transmit(&huart1, (uint8_t*)serial_buf, strlen(serial_buf), 10);
     HAL_Delay(100);
+    */
     
 
   }

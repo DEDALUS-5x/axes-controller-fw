@@ -46,7 +46,7 @@ void update_rotary_encoder(Encoder *enc, uint16_t raw_spi, float dt){
 
   float instant_vel = diff / dt;
   
-  enc -> _velocity = (enc->_velocity * 0.8f) + (instant_vel * 0.2f);
+  enc -> _velocity = (enc->_velocity * 0.9f) + (instant_vel * 0.1f);
   enc -> _last_converted_value = enc->_converted_value;
   enc -> _acceleration = enc -> _acceleration * 0.95f + ((enc -> _velocity - enc -> _last_velocity) / dt) * 0.05f;
   enc -> _last_velocity = enc -> _velocity;
@@ -164,6 +164,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
         if (machine_state == HOMING || machine_state == RUN) {
               stepper_loop(&axis_Z, &htim17, TIM_CHANNEL_1, DIR_Z1_GPIO_Port, DIR_Z1_Pin, 2.0f, 1.0f, 0.01f, IN_PERIOD);
+              stepper_loop(&axis_A1, &htim15, TIM_CHANNEL_1, DIR_P1_GPIO_Port, DIR_P1_Pin, 10.0f, 10.0f, 0.01f, dt);
+              stepper_loop(&axis_A2, &htim16, TIM_CHANNEL_1, DIR_P2_GPIO_Port, DIR_P2_Pin, 10.0f, 10.0f, 0.01f, dt);
+              stepper_loop(&axis_C, &htim8, TIM_CHANNEL_2, DIR_Y_GPIO_Port, DIR_Y_Pin, 1.0f, 1.0f, 0.01f, dt);
+
+              /*
               if(axis_A1._in_position == 0){
                 stepper_loop(&axis_A1, &htim15, TIM_CHANNEL_1, DIR_P1_GPIO_Port, DIR_P1_Pin, 10.0f, 10.0f, 0.01f, IN_PERIOD);
               }
@@ -174,6 +179,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
               if(axis_C._in_position == 0){
                 stepper_loop(&axis_C, &htim8, TIM_CHANNEL_2, DIR_Y_GPIO_Port, DIR_Y_Pin, 1.0f, 1.0f, 0.01f, IN_PERIOD);
               }
+                */
           } else {
               axis_Z._target = enc_rot_Z._converted_value;
               __HAL_TIM_SET_COMPARE(&htim17, TIM_CHANNEL_1, 0);
@@ -205,9 +211,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
           // X
           enc_lin_X._converted_value = - (float)((int32_t)TIM2 -> CNT) * 0.01f;
           float inst_vel_x = (enc_lin_X._converted_value - enc_lin_X._last_converted_value) / dt_pos;
-          enc_lin_X._velocity = (enc_lin_X._velocity * 0.8f) + (inst_vel_x * 0.2f);
+          enc_lin_X._velocity = (enc_lin_X._velocity * 0.9f) + (inst_vel_x * 0.1f);
           float inst_acc_x = (enc_lin_X._velocity - enc_lin_X._last_velocity) / dt_pos;
-          enc_lin_X._acceleration = (enc_lin_X._acceleration * 0.8f) + (inst_acc_x * 0.2f);
+          enc_lin_X._acceleration = (enc_lin_X._acceleration * 0.8f)+ (inst_acc_x * 0.2f);
 
           // Y
           enc_lin_Y._converted_value = (float)((int32_t)TIM5 -> CNT) * 0.01f;        
@@ -222,15 +228,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
           enc_lin_Y._last_converted_value = enc_lin_Y._converted_value;
           enc_lin_Y._last_velocity = enc_lin_Y._velocity;
 
-          // continuity
-          axis_X._target_pos += axis_X._target_vel * dt_pos;
-          axis_Y._target_pos += axis_Y._target_vel * dt_pos;
-
           // PID pos
           axis_X._pid_pos._setpoint = axis_X._target_pos;
-          axis_X._pid_vel._setpoint = PID_compute_pos(&axis_X._pid_pos, enc_lin_X._converted_value, dt_pos) + axis_X._target_vel;
+          axis_X._pid_vel._setpoint = PID_compute_pos(&axis_X._pid_pos, enc_lin_X._converted_value, dt_pos); // + axis_X._target_vel;
           axis_Y._pid_pos._setpoint = axis_Y._target_pos;
-          axis_Y._pid_vel._setpoint = PID_compute_pos(&axis_Y._pid_pos, enc_lin_Y._converted_value, dt_pos) + axis_Y._target_vel;
+          axis_Y._pid_vel._setpoint = PID_compute_pos(&axis_Y._pid_pos, enc_lin_Y._converted_value, dt_pos); // + axis_Y._target_vel;
           // axis_X._pid_vel._setpoint += axis_X._target_vel;
           // axis_Y._pid_vel._setpoint += axis_Y._target_vel;
 
@@ -290,6 +292,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
         }
 
         if(machine_state == HOMING || machine_state == RUN){
+
+          // continuity
+          axis_X._target_pos += axis_X._target_vel * dt;
+          axis_Y._target_pos += axis_Y._target_vel * dt;
           PID_compute_vel(&axis_X, dt);
           PID_compute_vel(&axis_Y, dt);
           motor_command(&axis_X, &htim1, TIM_CHANNEL_1, TIM_CHANNEL_2);
@@ -382,8 +388,8 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
     if (packet.start == 0xAA) {
       machine_state = RUN;
         
-      axis_X._target_pos = (axis_X._target_pos * 0.1f) + (packet.x * 0.9f);
-      axis_Y._target_pos = (axis_Y._target_pos * 0.1f) + (packet.y * 0.9f);
+      axis_X._target_pos = (axis_X._target_pos * 0.3f) + (packet.x * 0.7f);
+      axis_Y._target_pos = (axis_Y._target_pos * 0.3f) + (packet.y * 0.7f);
       axis_Z._target = packet.z;
       axis_X._target_vel = packet.vx;
       axis_Y._target_vel = packet.vy;

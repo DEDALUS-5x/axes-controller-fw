@@ -77,7 +77,15 @@ void PID_compute_vel(Axis *axis, float dt) {
   axis -> _pid_vel._last_D = filtered_D;
   axis -> _pid_vel._last_error = error;
 
-  float out = P + axis -> _pid_vel._integral + filtered_D + (accel * axis -> _ka);
+  float stiction_pwm = 0.0f;
+  
+  float deadband = 500.0f; 
+    if (axis->_target_vel > 0.02f) {
+      stiction_pwm = deadband;
+  } else if (axis->_target_vel < -0.02f) {
+      stiction_pwm = -deadband;
+  }
+  float out = P + axis->_pid_vel._integral + filtered_D + (accel * axis->_ka) + stiction_pwm;
 
   if (out > axis -> _pid_vel._output_limit) out = axis -> _pid_vel._output_limit;
   if (out < -axis -> _pid_vel._output_limit) out = -axis -> _pid_vel._output_limit;
@@ -163,44 +171,55 @@ void stepper_command(float speed,  float steps_per_unit, TIM_HandleTypeDef *htim
 void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, GPIO_TypeDef *dir_port, uint16_t dir_pin, float max_speed, float kp, float kd, float dt) {
 
     float current_pos = stepper->_enc_rot->_converted_value;
-    float error = stepper->_target - current_pos;
+float error = stepper->_target - current_pos;
 
-    float step_deg = 1.0f / stepper->steps_per_unit; 
-        float tolerance = step_deg * 0.1f; 
+// 1. TOLLERANZA DINAMICA MA FISICAMENTE POSSIBILE
+float step_deg = 1.0f / stepper->steps_per_unit; 
+float tolerance = step_deg * 0.5f; // Tolleranza di mezzo passo
+// Sicurezza assoluta: non scendere mai sotto la sensibilità dell'encoder (0.022) + margine di rumore
+if (tolerance < 0.035f) {
+    tolerance = 0.035f; 
+}
 
-    if (fabsf(error) < tolerance) {
-        stepper_command(0.0f, stepper->steps_per_unit, htim, channel, dir_port, dir_pin, stepper->_dir);
-        stepper->_current_speed_hz = 0.0f;
-        stepper->_last_error = error;
-        stepper -> _in_position = 1;
-        return; 
-    }
-
-    float derivative = -stepper->_enc_rot->_velocity; 
-    float required_speed = (error * kp) + (derivative * kd);
-    float approach_zone = 5.0f; 
-    float dynamic_max_speed = max_speed;
-    
-    if (fabsf(error) < approach_zone) {
-        dynamic_max_speed = max_speed * (fabsf(error) / approach_zone);
-        if (dynamic_max_speed < 1.0f) dynamic_max_speed = 1.0f; 
-    }
-
-    if (required_speed > dynamic_max_speed) required_speed = dynamic_max_speed;
-    if (required_speed < -dynamic_max_speed) required_speed = -dynamic_max_speed;
-
-    float max_accel = 1.2f;
-    float max_delta_v = max_accel * dt; 
-    
-    if (required_speed > stepper->_target_speed + max_delta_v) {
-        required_speed = stepper->_target_speed + max_delta_v;
-    } else if (required_speed < stepper->_target_speed - max_delta_v) {
-        required_speed = stepper->_target_speed - max_delta_v;
-    }
-    
-    stepper->_target_speed = required_speed; 
+if (fabsf(error) < tolerance) {
+    stepper_command(0.0f, stepper->steps_per_unit, htim, channel, dir_port, dir_pin, stepper->_dir);
+    stepper->_current_speed_hz = 0.0f;
+    stepper->_target_speed = 0.0f; // FONDAMENTALE! Azzera la memoria della rampa
     stepper->_last_error = error;
-    stepper -> _current_speed_hz = required_speed;
+    stepper->_in_position = 1;
+    return; 
+}
 
-    stepper_command(required_speed, stepper->steps_per_unit, htim, channel, dir_port, dir_pin, stepper->_dir);
+// 2. CALCOLO PID VELOCITÀ
+float derivative = -stepper->_enc_rot->_velocity; 
+float required_speed = (error * kp) + (derivative * kd);
+
+// 3. FRENATA DI APPROCCIO PROPORZIONALE
+float approach_zone = 5.0f; 
+float dynamic_max_speed = max_speed;
+
+if (fabsf(error) < approach_zone) {
+    dynamic_max_speed = max_speed * (fabsf(error) / approach_zone);
+    if (dynamic_max_speed < 1.0f) dynamic_max_speed = 1.0f; 
+}
+
+if (required_speed > dynamic_max_speed) required_speed = dynamic_max_speed;
+if (required_speed < -dynamic_max_speed) required_speed = -dynamic_max_speed;
+
+// 4. RAMPA DI ACCELERAZIONE/DECELERAZIONE (I Freni)
+float max_accel = 250.0f; // DEVE essere alto, altrimenti non frena in tempo e oscilla!
+float max_delta_v = max_accel * dt; 
+
+if (required_speed > stepper->_target_speed + max_delta_v) {
+    required_speed = stepper->_target_speed + max_delta_v;
+} else if (required_speed < stepper->_target_speed - max_delta_v) {
+    required_speed = stepper->_target_speed - max_delta_v;
+}
+
+stepper->_target_speed = required_speed; 
+stepper->_last_error = error;
+stepper->_current_speed_hz = required_speed;
+
+stepper_command(required_speed, stepper->steps_per_unit, htim, channel, dir_port, dir_pin, stepper->_dir);
+
 }
