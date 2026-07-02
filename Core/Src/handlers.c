@@ -164,8 +164,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
         if (machine_state == HOMING || machine_state == RUN) {
               stepper_loop(&axis_Z, &htim17, TIM_CHANNEL_1, DIR_Z1_GPIO_Port, DIR_Z1_Pin, 2.0f, 1.0f, 0.01f, IN_PERIOD);
-              stepper_loop(&axis_A1, &htim15, TIM_CHANNEL_1, DIR_P1_GPIO_Port, DIR_P1_Pin, 10.0f, 10.0f, 0.01f, dt);
+              // stepper_loop(&axis_A1, &htim15, TIM_CHANNEL_1, DIR_P1_GPIO_Port, DIR_P1_Pin, 10.0f, 10.0f, 0.01f, dt);
               stepper_loop(&axis_A2, &htim16, TIM_CHANNEL_1, DIR_P2_GPIO_Port, DIR_P2_Pin, 10.0f, 10.0f, 0.01f, dt);
+              stepper_command(axis_A2._current_speed_hz, axis_A1.steps_per_unit, &htim15, TIM_CHANNEL_1, DIR_P1_GPIO_Port, DIR_P1_Pin, axis_A1._dir);
               stepper_loop(&axis_C, &htim8, TIM_CHANNEL_2, DIR_Y_GPIO_Port, DIR_Y_Pin, 0.2, 0.05f, 0.0001f, dt);
 
               /*
