@@ -407,17 +407,16 @@ int main(void)
   axis_X._target_vel = 0.0f;
   axis_Y._target_pos = 0.0f;
   axis_Y._target_vel = 0.0f;
-  axis_A1._target = 1.0f;
-  axis_A2._target = 1.0f;
-  axis_C._target = 0.0f;
-  axis_Z1._target = 0.0f;
-  axis_Z2._target = 0.0f;
+  axis_A1._target = 20.0f;
+  axis_A2._target = 20.0f;
+  axis_C._target = 20.0f;
+  axis_Z1._target = 10.0f;
+  axis_Z2._target = 10.0f;
 
   // let's start bitches
   HAL_TIM_Base_Start_IT(&htim6);
   HAL_Delay(10);
   HAL_GPIO_WritePin(EN_STEPPERS_GPIO_Port, EN_STEPPERS_Pin, GPIO_PIN_RESET);
-
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -428,19 +427,18 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-
     
     __disable_irq();
     // uint16_t raw_y = spi2_rx_buf[0];
     float pos_y = enc_lin_Y._converted_value;
-    float pos_x = enc_lin_X._converted_value;
+    float pos_z = enc_rot_Z._converted_value;
     float pos_a = enc_rot_A._converted_value;
     float psos_c = enc_rot_C._converted_value;
     __enable_irq();
 
     // char err_y = (raw_y & 0x4000) ? 'E' : 'O';
 
-  sprintf(serial_buf, "pos_y: %d | pos_x: %d | pos_a: %d | pos_c: %d | machine state: %d\r\n", (int)pos_y, (int)pos_x, (int)pos_a, (int)psos_c, (int)machine_state);
+  sprintf(serial_buf, "pos_y: %d | pos_z: %d | pos_a: %d | pos_c: %d | z target: %d\r\n", (int)pos_y, (int)pos_z, (int)pos_a, (int)psos_c, (int)axis_Z1._target);
     // sprintf(serial_buf, "RAW Y[0]: 0x%04X (%c) | Pos Y: %d | LIN Y: %d\r\n", raw_y, err_y, (int)pos_y, (int)pos_lin);
     
     HAL_UART_Transmit(&huart1, (uint8_t*)serial_buf, strlen(serial_buf), 10);

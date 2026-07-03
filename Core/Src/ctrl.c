@@ -151,6 +151,7 @@ void stepper_command(float speed,  float steps_per_unit, TIM_HandleTypeDef *htim
         arr_val = 0xFFFF; // Limite per timer a 16 bit
     }
 
+    htim->Instance->CR1 &= ~TIM_CR1_ARPE;
     __HAL_TIM_SET_AUTORELOAD(htim, arr_val);
     __HAL_TIM_SET_COMPARE(htim, channel, arr_val / 2); // Duty cycle al 50% 
 
@@ -173,10 +174,9 @@ void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, G
     float current_pos = stepper->_enc_rot->_converted_value;
 float error = stepper->_target - current_pos;
 
-// 1. TOLLERANZA DINAMICA MA FISICAMENTE POSSIBILE
 float step_deg = 1.0f / stepper->steps_per_unit; 
-float tolerance = step_deg * 0.5f; // Tolleranza di mezzo passo
-// Sicurezza assoluta: non scendere mai sotto la sensibilità dell'encoder (0.022) + margine di rumore
+float tolerance = step_deg * 0.5f; 
+// tolerance encoder (0.022) + margin
 if (tolerance < 0.035f) {
     tolerance = 0.035f; 
 }
@@ -184,17 +184,16 @@ if (tolerance < 0.035f) {
 if (fabsf(error) < tolerance) {
     stepper_command(0.0f, stepper->steps_per_unit, htim, channel, dir_port, dir_pin, stepper->_dir);
     stepper->_current_speed_hz = 0.0f;
-    stepper->_target_speed = 0.0f; // FONDAMENTALE! Azzera la memoria della rampa
+    stepper->_target_speed = 0.0f;
     stepper->_last_error = error;
     stepper->_in_position = 1;
     return; 
 }
 
-// 2. CALCOLO PID VELOCITÀ
 float derivative = -stepper->_enc_rot->_velocity; 
 float required_speed = (error * kp) + (derivative * kd);
 
-// 3. FRENATA DI APPROCCIO PROPORZIONALE
+// break zone
 float approach_zone = 5.0f; 
 if(htim == &htim8){
     approach_zone = 15.0f;
@@ -209,10 +208,12 @@ if (fabsf(error) < approach_zone) {
 if (required_speed > dynamic_max_speed) required_speed = dynamic_max_speed;
 if (required_speed < -dynamic_max_speed) required_speed = -dynamic_max_speed;
 
-// 4. RAMPA DI ACCELERAZIONE/DECELERAZIONE (I Freni)
-float max_accel = 300.0f; // DEVE essere alto, altrimenti non frena in tempo e oscilla!
+// acceleration ramp
+float max_accel = 300.0f;
 if (htim == &htim8) { 
-    max_accel = 200.0f; // Rampe lunghissime e dolcissime per non eccitare la massa
+    max_accel = 200.0f;
+} else if (htim == &htim17 || htim == &htim3) {
+    max_accel = 100.0f; 
 }
 float max_delta_v = max_accel * dt; 
 
