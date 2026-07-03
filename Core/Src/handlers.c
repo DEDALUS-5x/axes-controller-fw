@@ -14,7 +14,6 @@
 
 static uint8_t pid_counter = 0;
 static uint32_t led_counter = 0;
-static uint8_t homing_counter = 0;
 
 static volatile uint8_t spi1_need_clear = 0;
 static volatile uint8_t spi2_need_clear = 0;
@@ -458,12 +457,23 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 
-  if(machine_state == HOMING){
+  // debouncing shit
+  static uint32_t last_interrupt_time = 0;
+  uint32_t current_time = HAL_GetTick();
+  if (current_time - last_interrupt_time < 100) {
+      return; 
+  }
+  last_interrupt_time = current_time;
 
-    if (GPIO_Pin == ES_X_Pin) {
+  static uint8_t x_homed = 0;
+  static uint8_t y_homed = 0;
+  // static uint8_t z_homed = 0;
 
-      homing_counter++;
+  if(machine_state == HOMING) {
 
+    if (GPIO_Pin == ES_X_Pin && x_homed == 0) {
+      
+      x_homed = 1;
       // stop motors
       __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 0);
       __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
@@ -483,10 +493,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
       PID_reset(&(axis_X._pid_vel));
     }
 
-    if (GPIO_Pin == ES_Y1_Pin){
+    if (GPIO_Pin == ES_Y1_Pin && y_homed == 0) {
 
-      homing_counter++;
-
+      y_homed = 1;
       // stop motors
       __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 0);
       __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_4, 0);
@@ -504,10 +513,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
       PID_reset(&(axis_Y._pid_vel));
     }
 
-    if (GPIO_Pin == ES_Z1_Pin){
-
-      homing_counter++;
-
+    if (GPIO_Pin == ES_Z1_Pin) {
+      // z_homed = 1;
       __HAL_TIM_SET_COMPARE(&htim17, TIM_CHANNEL_1, 0);
 
       enc_rot_Z._offset = 0.0f;
@@ -520,12 +527,16 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
       axis_Z2._current_speed_hz = 0.0f;
     }
 
-    if(homing_counter == 3){
+    if(x_homed == 1 && y_homed == 1) {
       machine_state = RUN;
+      
+      // for the next homing
+      x_homed = 0;
+      y_homed = 0;
+      // z_homed = 0;
     }
-  }
-
-  if(machine_state == RUN){
+  
+  } else if(machine_state == RUN) {
 
     // ERROR! physical violations, stop motors
     __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 0);
@@ -537,7 +548,5 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
     __HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_2, 0);
 
     machine_state = INIT;
-    // while(1); // required power cycle. The endstop interrupts have the higher priority
   }
-
 }
