@@ -128,7 +128,7 @@ void stepper_command(float speed,  float steps_per_unit, TIM_HandleTypeDef *htim
     }
 
     float freq = fabsf(speed) * steps_per_unit;
-    if (freq < 1.2f) {
+    if (freq < 1.6f) {
         __HAL_TIM_SET_COMPARE(htim, channel, 0); 
         return;
     }
@@ -173,31 +173,42 @@ void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, G
 
     float current_pos = stepper->_enc_rot->_converted_value;
     float error = stepper->_target - current_pos;
+
     float step_deg = 1.0f / stepper->steps_per_unit; 
-    float tolerance = step_deg * 0.5f; 
+    float inner_tol = 0.05f;
+    float outer_tol = 0.15f;
     
     if (htim == &htim8) { 
-        tolerance = 0.15f; 
+        inner_tol = 0.15f; outer_tol = 0.30f; 
     } else if (htim == &htim15 || htim == &htim16) { 
-        tolerance = 0.2f;
-    } else if (tolerance < 0.05f) {
-        tolerance = 0.05f; 
+        inner_tol = 0.15f; 
+        outer_tol = 0.30f; 
     }
 
-    if (fabsf(error) < tolerance) {
-        stepper_command(0.0f, stepper->steps_per_unit, htim, channel, dir_port, dir_pin, stepper->_dir);
-        stepper->_current_speed_hz = 0.0f;
-        stepper->_target_speed = 0.0f; 
-        stepper->_last_error = error;
-        stepper->_in_position = 1;
-        return; 
+    if (stepper->_in_position == 1) {
+        if (fabsf(error) > outer_tol) {
+            stepper->_in_position = 0; 
+        } else {
+            stepper_command(0.0f, stepper->steps_per_unit, htim, channel, dir_port, dir_pin, stepper->_dir);
+            return;
+        }
+    } else {
+        if (fabsf(error) < inner_tol) {
+            stepper->_in_position = 1;
+            stepper_command(0.0f, stepper->steps_per_unit, htim, channel, dir_port, dir_pin, stepper->_dir);
+            stepper->_current_speed_hz = 0.0f;
+            stepper->_target_speed = 0.0f; 
+            stepper->_last_error = error;
+            return; 
+        }
     }
+
     float derivative = -stepper->_enc_rot->_velocity; 
     float raw_speed = (error * kp) + (derivative * kd);
 
-    float alpha = 0.1f;
+    float alpha = 0.1f; 
     if (htim == &htim8) {
-        alpha = 0.005f; // heavy filter for C
+        alpha = 0.005f; 
     }
     float required_speed = (stepper->_target_speed * (1.0f - alpha)) + (raw_speed * alpha);
 
@@ -213,11 +224,13 @@ void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, G
     if (required_speed > dynamic_max_speed) required_speed = dynamic_max_speed;
     if (required_speed < -dynamic_max_speed) required_speed = -dynamic_max_speed;
 
-    float max_accel = 5000.0f;
+    float max_accel = 5000.0f; // Default
     if (htim == &htim17 || htim == &htim3) {
         max_accel = 15.0f;
     } else if (htim == &htim8) {
-        max_accel = 80.0f;
+        max_accel = 80.0f; 
+    } else if (htim == &htim15 || htim == &htim16) {
+        max_accel = 40.0f; 
     }
     
     float max_delta_v = max_accel * dt; 
