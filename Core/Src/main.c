@@ -427,6 +427,8 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+
+    /*
     
     __disable_irq();
     // uint16_t raw_y = spi2_rx_buf[0];
@@ -443,6 +445,7 @@ int main(void)
     
     HAL_UART_Transmit(&huart1, (uint8_t*)serial_buf, strlen(serial_buf), 10);
     HAL_Delay(100);
+    */
     
 
   }
