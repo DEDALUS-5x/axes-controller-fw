@@ -389,8 +389,7 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
     // SCB_CleanDCache_by_Addr((uint32_t *)spi3_tx_buf_active, sizeof(SPITxPacket));
     // HAL_SPI_TransmitReceive_DMA(&hspi3, spi3_tx_buf_active, spi3_rx_buf, sizeof(SPIPacket));
 
-    if (packet.start == 0xAA) {
-      machine_state = RUN;
+    if (packet.start == 0xAA && machine_state == RUN) {
         
       axis_X._target_pos = (axis_X._target_pos * 0.3f) + (packet.x * 0.7f);
       axis_Y._target_pos = (axis_Y._target_pos * 0.5f) + (packet.y * 0.5f);
