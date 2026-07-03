@@ -68,12 +68,14 @@ void PID_compute_vel(Axis *axis, float dt) {
   float P = axis -> _pid_vel._kp * error;
 
   axis -> _pid_vel._integral += axis -> _pid_vel._ki * error * dt;
-  // Clamping integrale basato sul limite PWM (es. 1000 per il timer)
-  if (axis -> _pid_vel._integral > axis -> _pid_vel._output_limit) 
-      axis -> _pid_vel._integral = axis -> _pid_vel._output_limit;
-  if (axis -> _pid_vel._integral < -axis -> _pid_vel._output_limit) 
-      axis -> _pid_vel._integral = -axis -> _pid_vel._output_limit;
-
+  if (axis -> _pid_vel._anti_windup_limit > 0.0f) {
+      if (axis -> _pid_vel._integral > axis -> _pid_vel._anti_windup_limit) 
+          axis -> _pid_vel._integral = axis -> _pid_vel._anti_windup_limit;
+      if (axis -> _pid_vel._integral < -axis -> _pid_vel._anti_windup_limit) 
+          axis -> _pid_vel._integral = -axis -> _pid_vel._anti_windup_limit;
+  } else {
+      axis -> _pid_vel._integral = 0.0f;
+  }
   // Derivativa con Filtro Passa-Basso (N)
   // Fondamentale per non amplificare il rumore della derivazione numerica
   float raw_D = axis -> _pid_vel._kd * (error - axis -> _pid_vel._last_error) / dt;
@@ -181,8 +183,9 @@ void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, G
 
     if (fabsf(error) < 0.15f) {
         stepper_command(0.0f, stepper->steps_per_unit, htim, channel, dir_port, dir_pin, stepper->_dir);
-        stepper->_current_speed_hz = 0.0f;
-        stepper->_target_speed = 0.0f;
+        stepper -> _current_speed_hz = 0.0f;
+        stepper -> _target_speed = 0.0f;
+        stepper -> _in_position = 1;
         return;
     }
 
@@ -196,14 +199,11 @@ void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, G
     if (req_v > max_speed) req_v = max_speed;
     if (req_v < -max_speed) req_v = -max_speed;
 
-    // 4. ACCELERAZIONE IN PARTENZA (Gestione dei gradini dal Raspi)
-    // Se il Raspi chiede un salto istantaneo, questa rampa lo spalma dolcemente.
-    float jerk = max_accel * dt;
-
-    if (req_v > stepper->_target_speed + jerk) {
-        stepper->_target_speed += jerk;
-    } else if (req_v < stepper->_target_speed - jerk) {
-        stepper->_target_speed -= jerk;
+    float max_vel = max_accel * dt;
+    if (req_v > stepper->_target_speed + max_vel) {
+        stepper->_target_speed += max_vel;
+    } else if (req_v < stepper->_target_speed - max_vel) {
+        stepper->_target_speed -= max_vel;
     } else {
         stepper->_target_speed = req_v;
     }
