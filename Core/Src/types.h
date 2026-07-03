@@ -21,6 +21,7 @@ typedef struct {
     float _output_limit;
     float _output;
     float _last_D;
+    float _anti_windup_limit;
 } PID;
 
 // Encoder struct

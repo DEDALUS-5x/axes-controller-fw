@@ -19,12 +19,13 @@ void PID_reset(PID *pid){
   pid -> _setpoint = 0.0f;
 }
 
-void PID_init(PID *pid, float kp, float ki, float kd, float limit){
+void PID_init(PID *pid, float kp, float ki, float kd, float limit, float w_limit){
 
   pid -> _kp = kp;
   pid -> _ki = ki;
   pid -> _kd = kd;
   pid -> _output_limit = limit;
+  pid -> _anti_windup_limit = w_limit;
   
   PID_reset(pid);
 }
@@ -37,8 +38,12 @@ float PID_compute_pos(PID *pid, float current_pos, float dt){
 
   // integrale solo se non siamo già saturi
   pid -> _integral += pid -> _ki * error * dt;
-  if (pid -> _integral > pid -> _output_limit) pid -> _integral = pid -> _output_limit;
-  if (pid -> _integral < -pid -> _output_limit) pid -> _integral = -pid -> _output_limit;
+  if (pid->_anti_windup_limit > 0.0f) {
+      if (pid->_integral > pid->_anti_windup_limit) pid->_integral = pid->_anti_windup_limit;
+      if (pid->_integral < -pid->_anti_windup_limit) pid->_integral = -pid->_anti_windup_limit;
+  } else {
+      pid->_integral = 0.0f; 
+  }
 
   float D = pid -> _kd * (error - pid -> _last_error) / dt;
   pid -> _last_error = error;

@@ -23,7 +23,7 @@ extern TIM_HandleTypeDef htim3;
 extern TIM_HandleTypeDef htim15;
 extern TIM_HandleTypeDef htim16;
 
-void PID_init(PID *pid, float kp, float ki, float kd, float limit);
+void PID_init(PID *pid, float kp, float ki, float kd, float limit, float w_limit);
 
 // void PID_compute(Axis *axis, float dt);
 
