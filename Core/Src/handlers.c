@@ -392,8 +392,8 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
 
     if (packet.start == 0xAA && machine_state == RUN) {
         
-      axis_X._target_pos = (axis_X._target_pos * 0.3f) + (packet.x * 0.7f);
-      axis_Y._target_pos = (axis_Y._target_pos * 0.5f) + (packet.y * 0.5f);
+      axis_X._target_pos = (axis_X._target_pos * 0.1f) + (packet.x * 0.9f);
+      axis_Y._target_pos = (axis_Y._target_pos * 0.1f) + (packet.y * 0.9f);
       axis_Z1._target = packet.z;
       axis_Z2._target = packet.z;
       axis_X._target_vel = packet.vx;
