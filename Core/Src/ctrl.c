@@ -174,8 +174,7 @@ void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, G
 
     float error = stepper->_target - stepper->_enc_rot->_converted_value;
 
-    // Tolleranza semplice: se sei dentro 0.1 gradi, sei fermo.
-    if (fabsf(error) < 0.2f) {
+    if (fabsf(error) < 0.15f) {
         stepper_command(0.0f, stepper->steps_per_unit, htim, channel, dir_port, dir_pin, stepper->_dir);
         stepper->_current_speed_hz = 0.0f;
         stepper->_target_speed = 0.0f;
@@ -183,17 +182,26 @@ void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, G
     }
 
     float req_v = error * kp;
-    
+    float max_accel = 20.0f; 
+    float safe_v = sqrtf(2.0f * max_accel * fabsf(error)); // max vel for breaking
+
+    if (req_v > safe_v) req_v = safe_v;
+    if (req_v < -safe_v) req_v = -safe_v;
+
     if (req_v > max_speed) req_v = max_speed;
     if (req_v < -max_speed) req_v = -max_speed;
 
-    // artificial jerk limit
-    float jerk_limit = 50.0f; // deg/s^2
-    float delta_v = jerk_limit * dt;
+    // 4. ACCELERAZIONE IN PARTENZA (Gestione dei gradini dal Raspi)
+    // Se il Raspi chiede un salto istantaneo, questa rampa lo spalma dolcemente.
+    float jerk = max_accel * dt;
 
-    if (req_v > stepper->_target_speed + delta_v) stepper->_target_speed += delta_v;
-    else if (req_v < stepper->_target_speed - delta_v) stepper->_target_speed -= delta_v;
-    else stepper->_target_speed = req_v;
+    if (req_v > stepper->_target_speed + jerk) {
+        stepper->_target_speed += jerk;
+    } else if (req_v < stepper->_target_speed - jerk) {
+        stepper->_target_speed -= jerk;
+    } else {
+        stepper->_target_speed = req_v;
+    }
 
     stepper_command(stepper->_target_speed, stepper->steps_per_unit, htim, channel, dir_port, dir_pin, stepper->_dir);
 }

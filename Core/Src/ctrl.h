@@ -76,6 +76,6 @@ void stepper_command(float speed, float steps_per_unit, TIM_HandleTypeDef *htim,
  * 
  * @brief Stepper loop function
  */
-void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, GPIO_TypeDef *dir_port, uint16_t dir_pin, float max_speed, float kp, float kd, float dt);
+void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, GPIO_TypeDef *dir_port, uint16_t dir_pin, float max_speed, float kp, float dt);
 
 #endif
