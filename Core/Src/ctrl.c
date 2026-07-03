@@ -172,61 +172,65 @@ void stepper_command(float speed,  float steps_per_unit, TIM_HandleTypeDef *htim
 void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, GPIO_TypeDef *dir_port, uint16_t dir_pin, float max_speed, float kp, float kd, float dt) {
 
     float current_pos = stepper->_enc_rot->_converted_value;
-float error = stepper->_target - current_pos;
+    float error = stepper->_target - current_pos;
+    float step_deg = 1.0f / stepper->steps_per_unit; 
+    float tolerance = step_deg * 0.5f; 
+    
+    if (htim == &htim8) { 
+        tolerance = 0.15f; 
+    } else if (htim == &htim15 || htim == &htim16) { 
+        tolerance = 0.2f;
+    } else if (tolerance < 0.05f) {
+        tolerance = 0.05f; 
+    }
 
-float step_deg = 1.0f / stepper->steps_per_unit; 
-float tolerance = step_deg * 0.5f; 
-// tolerance encoder (0.022) + margin
-if (tolerance < 0.035f) {
-    tolerance = 0.035f; 
-}
+    if (fabsf(error) < tolerance) {
+        stepper_command(0.0f, stepper->steps_per_unit, htim, channel, dir_port, dir_pin, stepper->_dir);
+        stepper->_current_speed_hz = 0.0f;
+        stepper->_target_speed = 0.0f; 
+        stepper->_last_error = error;
+        stepper->_in_position = 1;
+        return; 
+    }
+    float derivative = -stepper->_enc_rot->_velocity; 
+    float raw_speed = (error * kp) + (derivative * kd);
 
-if (fabsf(error) < tolerance) {
-    stepper_command(0.0f, stepper->steps_per_unit, htim, channel, dir_port, dir_pin, stepper->_dir);
-    stepper->_current_speed_hz = 0.0f;
-    stepper->_target_speed = 0.0f;
+    float alpha = 0.1f;
+    if (htim == &htim8) {
+        alpha = 0.005f; // heavy filter for C
+    }
+    float required_speed = (stepper->_target_speed * (1.0f - alpha)) + (raw_speed * alpha);
+
+    float approach_zone = 5.0f; 
+    float dynamic_max_speed = max_speed;
+
+    if (fabsf(error) < approach_zone) {
+        dynamic_max_speed = max_speed * (fabsf(error) / approach_zone);
+        float min_speed = 1.6f / stepper->steps_per_unit;
+        if(dynamic_max_speed < min_speed) dynamic_max_speed = min_speed;
+    }
+
+    if (required_speed > dynamic_max_speed) required_speed = dynamic_max_speed;
+    if (required_speed < -dynamic_max_speed) required_speed = -dynamic_max_speed;
+
+    float max_accel = 5000.0f;
+    if (htim == &htim17 || htim == &htim3) {
+        max_accel = 15.0f;
+    } else if (htim == &htim8) {
+        max_accel = 80.0f;
+    }
+    
+    float max_delta_v = max_accel * dt; 
+
+    if (required_speed > stepper->_target_speed + max_delta_v) {
+        required_speed = stepper->_target_speed + max_delta_v;
+    } else if (required_speed < stepper->_target_speed - max_delta_v) {
+        required_speed = stepper->_target_speed - max_delta_v;
+    }
+
+    stepper->_target_speed = required_speed; 
     stepper->_last_error = error;
-    stepper->_in_position = 1;
-    return; 
-}
+    stepper->_current_speed_hz = required_speed;
 
-float derivative = -stepper->_enc_rot->_velocity; 
-float required_speed = (error * kp) + (derivative * kd);
-
-// break zone
-float approach_zone = 5.0f; 
-if(htim == &htim8){
-    approach_zone = 15.0f;
-}
-float dynamic_max_speed = max_speed;
-
-if (fabsf(error) < approach_zone) {
-    dynamic_max_speed = max_speed * (fabsf(error) / approach_zone);
-    if (dynamic_max_speed < 1.0f) dynamic_max_speed = 1.0f; 
-}
-
-if (required_speed > dynamic_max_speed) required_speed = dynamic_max_speed;
-if (required_speed < -dynamic_max_speed) required_speed = -dynamic_max_speed;
-
-// acceleration ramp
-float max_accel = 300.0f;
-if (htim == &htim8) { 
-    max_accel = 200.0f;
-} else if (htim == &htim17 || htim == &htim3) {
-    max_accel = 100.0f; 
-}
-float max_delta_v = max_accel * dt; 
-
-if (required_speed > stepper->_target_speed + max_delta_v) {
-    required_speed = stepper->_target_speed + max_delta_v;
-} else if (required_speed < stepper->_target_speed - max_delta_v) {
-    required_speed = stepper->_target_speed - max_delta_v;
-}
-
-stepper->_target_speed = required_speed; 
-stepper->_last_error = error;
-stepper->_current_speed_hz = required_speed;
-
-stepper_command(required_speed, stepper->steps_per_unit, htim, channel, dir_port, dir_pin, stepper->_dir);
-
+    stepper_command(required_speed, stepper->steps_per_unit, htim, channel, dir_port, dir_pin, stepper->_dir);
 }

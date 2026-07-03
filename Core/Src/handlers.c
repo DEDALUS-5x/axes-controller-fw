@@ -166,10 +166,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
               stepper_loop(&axis_Z1, &htim17, TIM_CHANNEL_1, DIR_Z1_GPIO_Port, DIR_Z1_Pin, 3.0f, 1.0f, 0.01f, dt);
               stepper_command(axis_Z1._current_speed_hz, axis_Z2.steps_per_unit, &htim3, TIM_CHANNEL_2, DIR_Z2_GPIO_Port, DIR_Z2_Pin, 0); 
               enc_rot_Z._converted_value += (axis_Z1._current_speed_hz * dt);
-              stepper_loop(&axis_A1, &htim15, TIM_CHANNEL_1, DIR_P1_GPIO_Port, DIR_P1_Pin, 10.0f, 10.0f, 0.01f, dt);
-              stepper_loop(&axis_A2, &htim16, TIM_CHANNEL_1, DIR_P2_GPIO_Port, DIR_P2_Pin, 10.0f, 10.0f, 0.01f, dt);
+              stepper_loop(&axis_A1, &htim15, TIM_CHANNEL_1, DIR_P1_GPIO_Port, DIR_P1_Pin, 10.0f, 10.0f, 0.001f, dt);
+              stepper_loop(&axis_A2, &htim16, TIM_CHANNEL_1, DIR_P2_GPIO_Port, DIR_P2_Pin, 10.0f, 10.0f, 0.001f, dt);
               stepper_command(axis_A2._current_speed_hz, axis_A1.steps_per_unit, &htim15, TIM_CHANNEL_1, DIR_P1_GPIO_Port, DIR_P1_Pin, axis_A1._dir);
-              stepper_loop(&axis_C, &htim8, TIM_CHANNEL_2, DIR_Y_GPIO_Port, DIR_Y_Pin, 0.15, 0.01f, 0.001f, dt);
+              stepper_loop(&axis_C, &htim8, TIM_CHANNEL_2, DIR_Y_GPIO_Port, DIR_Y_Pin, 0.15, 0.1f, 0.00001f, dt);
 
               /*
               if(axis_A1._in_position == 0){
