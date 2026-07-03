@@ -196,6 +196,9 @@ float required_speed = (error * kp) + (derivative * kd);
 
 // 3. FRENATA DI APPROCCIO PROPORZIONALE
 float approach_zone = 5.0f; 
+if(htim == &htim8){
+    approach_zone = 15.0f;
+}
 float dynamic_max_speed = max_speed;
 
 if (fabsf(error) < approach_zone) {
@@ -208,6 +211,9 @@ if (required_speed < -dynamic_max_speed) required_speed = -dynamic_max_speed;
 
 // 4. RAMPA DI ACCELERAZIONE/DECELERAZIONE (I Freni)
 float max_accel = 300.0f; // DEVE essere alto, altrimenti non frena in tempo e oscilla!
+if (htim == &htim8) { 
+    max_accel = 200.0f; // Rampe lunghissime e dolcissime per non eccitare la massa
+}
 float max_delta_v = max_accel * dt; 
 
 if (required_speed > stepper->_target_speed + max_delta_v) {

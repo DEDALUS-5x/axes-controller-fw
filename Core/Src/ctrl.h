@@ -17,6 +17,8 @@
 #define DEG_TO_MM (40.0f / 360.0f)
 #define STEPPER_CLOCK 9821428.0f
 
+extern TIM_HandleTypeDef htim8;
+
 void PID_init(PID *pid, float kp, float ki, float kd, float limit);
 
 // void PID_compute(Axis *axis, float dt);
