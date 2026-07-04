@@ -41,7 +41,8 @@ void update_rotary_encoder(Encoder *enc, uint16_t raw_spi, float dt){
   enc->_last_raw_pos = new_pos;
 
   float total_pos_deg = (enc->_turns * 360.0f) + new_pos;
-  enc->_converted_value = (total_pos_deg - enc->_offset)  / enc -> g_ratio ;
+  float raw_converted = (total_pos_deg - enc->_offset) / enc->g_ratio;
+  enc->_converted_value = (enc->_converted_value * 0.5f) + (raw_converted * 0.5f);
 
   float instant_vel = diff / dt;
   
@@ -167,9 +168,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
               stepper_command(axis_Z1._current_speed_hz, axis_Z2.steps_per_unit, &htim3, TIM_CHANNEL_2, DIR_Z2_GPIO_Port, DIR_Z2_Pin, 0); 
               enc_rot_Z._converted_value += (axis_Z1._current_speed_hz * dt);
               
-              stepper_loop(&axis_A1, &htim15, TIM_CHANNEL_1, DIR_P1_GPIO_Port, DIR_P1_Pin, 20.0f, 1.5f,dt);              
-              stepper_loop(&axis_A2, &htim16, TIM_CHANNEL_1, DIR_P2_GPIO_Port, DIR_P2_Pin, 20.0f, 1.5f, dt);
-              stepper_loop(&axis_C, &htim8, TIM_CHANNEL_2, DIR_Y_GPIO_Port, DIR_Y_Pin, 20.0, 1.5f, dt);
+              stepper_loop(&axis_A1, &htim15, TIM_CHANNEL_1, DIR_P1_GPIO_Port, DIR_P1_Pin, 25.0f, 1.5f,dt);              
+              stepper_loop(&axis_A2, &htim16, TIM_CHANNEL_1, DIR_P2_GPIO_Port, DIR_P2_Pin, 25.0f, 1.5f, dt);
+              stepper_loop(&axis_C, &htim8, TIM_CHANNEL_2, DIR_Y_GPIO_Port, DIR_Y_Pin, 25.0, 1.5f, dt);
           
           } else {
               axis_Z1._target = enc_rot_Z._converted_value;

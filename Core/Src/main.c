@@ -115,6 +115,7 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
+  HAL_Delay(250);
 
   /* USER CODE END Init */
 

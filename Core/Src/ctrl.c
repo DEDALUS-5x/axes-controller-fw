@@ -179,17 +179,15 @@ void stepper_command(float speed,  float steps_per_unit, TIM_HandleTypeDef *htim
 
 void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, GPIO_TypeDef *dir_port, uint16_t dir_pin, float max_speed, float kp, float dt) {
 
-    float error = stepper->_target - stepper->_enc_rot->_converted_value;
+    float raw_error = stepper->_target - stepper->_enc_rot->_converted_value;
+    float alpha_err = 0.5f;
 
-    if (htim == &htim8) {
-        error = (stepper->_last_error * 0.8f) + (error * 0.2f);
-    }
+    float error = (stepper->_last_error * (1.0f - alpha_err)) + (raw_error * alpha_err);
     stepper->_last_error = error;
 
-    float step_deg = 1.0f / stepper->steps_per_unit; // ~0.11°
-    float inner_tol = step_deg * 0.5f;
+    float step_deg = 1.0f / stepper->steps_per_unit; 
+    float inner_tol = step_deg * 0.2f; 
     float outer_tol = step_deg * 1.0f;
-
     if (stepper->_in_position == 1) {
         if (fabsf(error) > outer_tol) {
             stepper->_in_position = 0; 
@@ -208,7 +206,6 @@ void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, G
     }
 
     float req_v = error * kp;
-
     float max_accel = 30.0f; 
     float safe_v = sqrtf(2.0f * max_accel * fabsf(error));
 
