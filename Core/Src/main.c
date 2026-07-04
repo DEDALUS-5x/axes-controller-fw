@@ -191,9 +191,9 @@ int main(void)
   axis_Y._enc_lin = &enc_lin_Y;
   axis_Y._pwm_register = &TIM1->CCR3;
   axis_Y._enc_rot -> _offset = 0.0f;
-  PID_init(&axis_Y._pid_pos, 60.0f, 0.009f, 0.001f, 75.0f, 500.0f);
+  PID_init(&axis_Y._pid_pos, 80.0f, 0.009f, 0.001f, 75.0f, 500.0f);
   // PID_init(&axis_Y._pid_vel, 366.4f, 0.0916f, 0.000916f, 3000.0f);
-  PID_init(&axis_Y._pid_vel, 18.0f, 0.003f, 0.001f, 10000.0f, 500.0f);
+  PID_init(&axis_Y._pid_vel, 20.0f, 0.003f, 0.001f, 10000.0f, 500.0f);
   HAL_TIM_Encoder_Start(&htim5, TIM_CHANNEL_ALL);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
