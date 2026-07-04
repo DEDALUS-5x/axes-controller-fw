@@ -407,9 +407,9 @@ int main(void)
   axis_X._target_vel = 0.0f;
   axis_Y._target_pos = -0.0f;
   axis_Y._target_vel = 0.0f;
-  axis_A1._target = 10.0f;
-  axis_A2._target = 10.0f;
-  axis_C._target = 20.0f;
+  axis_A1._target = 20.0f;
+  axis_A2._target = 20.0f;
+  axis_C._target = 10.0f;
   axis_Z1._target = 0.0f;
   axis_Z2._target = 0.0f;
 
@@ -428,7 +428,6 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-    /*
     
     __disable_irq();
     // uint16_t raw_y = spi2_rx_buf[0];
@@ -445,7 +444,7 @@ int main(void)
     
     HAL_UART_Transmit(&huart1, (uint8_t*)serial_buf, strlen(serial_buf), 10);
     HAL_Delay(100);
-    */
+  
     
 
   }

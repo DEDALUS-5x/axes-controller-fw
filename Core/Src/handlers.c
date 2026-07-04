@@ -167,16 +167,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
               stepper_command(axis_Z1._current_speed_hz, axis_Z2.steps_per_unit, &htim3, TIM_CHANNEL_2, DIR_Z2_GPIO_Port, DIR_Z2_Pin, 0); 
               enc_rot_Z._converted_value += (axis_Z1._current_speed_hz * dt);
               
-              if(axis_A1._in_position == 0){
-                stepper_loop(&axis_A1, &htim15, TIM_CHANNEL_1, DIR_P1_GPIO_Port, DIR_P1_Pin, 20.0f, 1.5f, dt);
-              }
-              
-              if(axis_A2._in_position == 0){
-                stepper_loop(&axis_A2, &htim16, TIM_CHANNEL_1, DIR_P2_GPIO_Port, DIR_P2_Pin, 20.0f, 1.5f, dt);
-              }
-              if(axis_C._in_position == 0){
-                stepper_loop(&axis_C, &htim8, TIM_CHANNEL_2, DIR_Y_GPIO_Port, DIR_Y_Pin, 0.2, 0.01f, dt);
-              }
+              stepper_loop(&axis_A1, &htim15, TIM_CHANNEL_1, DIR_P1_GPIO_Port, DIR_P1_Pin, 20.0f, 1.5f,dt);              
+              stepper_loop(&axis_A2, &htim16, TIM_CHANNEL_1, DIR_P2_GPIO_Port, DIR_P2_Pin, 20.0f, 1.5f, dt);
+              stepper_loop(&axis_C, &htim8, TIM_CHANNEL_2, DIR_Y_GPIO_Port, DIR_Y_Pin, 20.0, 1.5f, dt);
           
           } else {
               axis_Z1._target = enc_rot_Z._converted_value;
@@ -234,16 +227,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
           axis_X._pid_vel._setpoint = PID_compute_pos(&axis_X._pid_pos, enc_lin_X._converted_value, dt_pos) + axis_X._target_vel;
           axis_Y._pid_pos._setpoint = axis_Y._target_pos;
           axis_Y._pid_vel._setpoint = PID_compute_pos(&axis_Y._pid_pos, enc_lin_Y._converted_value, dt_pos); // + axis_Y._target_vel;
-          // axis_X._pid_vel._setpoint += axis_X._target_vel;
-          // axis_Y._pid_vel._setpoint += axis_Y._target_vel;
-
-          // positioning axes
-          // update_pwm_encoder(&enc_rot_C, &htim23, dt_pos);
-          // update_pwm_encoder(&enc_rot_A, &htim4, dt_pos);
-
-          // enc_rot_A._converted_value += (axis_A1._current_speed_hz * dt_pos);
-          // enc_rot_C._converted_value += (axis_C._current_speed_hz * dt_pos);
-
+        
           // Feedback packet to send to the raspi
           static uint32_t current_msg_id = 0;
           SPITxPacket tx_packet;
@@ -395,15 +379,15 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
       axis_Y._target_vel = packet.vy;
 
       // steppers positioning management
-      if(axis_A1._target != packet.a){
+      if(fabsf(axis_A1._target - packet.a) > 0.05f){
         axis_A1._in_position = 0;
         axis_A1._target = packet.a;
       }
-      if(axis_A2._target != packet.a){
+      if(fabsf(axis_A2._target - packet.a) > 0.05f){
         axis_A2._in_position = 0;
         axis_A2._target = packet.a;
       }
-      if(axis_C._target != packet.c){
+      if(fabsf(axis_C._target - packet.c) > 0.05f){
         axis_C._in_position = 0;
         axis_C._target = packet.c;
       }
@@ -541,6 +525,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
     __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_4, 0);
     __HAL_TIM_SET_COMPARE(&htim15, TIM_CHANNEL_1, 0);
     __HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_2, 0);
+
+    HAL_GPIO_WritePin(EN_STEPPERS_GPIO_Port, EN_STEPPERS_Pin, GPIO_PIN_SET);
 
     machine_state = INIT;
   }

@@ -181,24 +181,41 @@ void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, G
 
     float error = stepper->_target - stepper->_enc_rot->_converted_value;
 
-    if (fabsf(error) < 0.15f) {
-        stepper_command(0.0f, stepper->steps_per_unit, htim, channel, dir_port, dir_pin, stepper->_dir);
-        stepper -> _current_speed_hz = 0.0f;
-        stepper -> _target_speed = 0.0f;
-        stepper -> _in_position = 1;
-        return;
+    if (htim == &htim8) {
+        error = (stepper->_last_error * 0.8f) + (error * 0.2f);
+    }
+    stepper->_last_error = error;
+
+    float step_deg = 1.0f / stepper->steps_per_unit; // ~0.11°
+    float inner_tol = step_deg * 0.5f;
+    float outer_tol = step_deg * 1.0f;
+
+    if (stepper->_in_position == 1) {
+        if (fabsf(error) > outer_tol) {
+            stepper->_in_position = 0; 
+        } else {
+            stepper_command(0.0f, stepper->steps_per_unit, htim, channel, dir_port, dir_pin, stepper->_dir);
+            return;
+        }
+    } else {
+        if (fabsf(error) < inner_tol) {
+            stepper_command(0.0f, stepper->steps_per_unit, htim, channel, dir_port, dir_pin, stepper->_dir);
+            stepper->_current_speed_hz = 0.0f;
+            stepper->_target_speed = 0.0f;
+            stepper->_in_position = 1;
+            return;
+        }
     }
 
     float req_v = error * kp;
-    float max_accel = 20.0f; 
-    float safe_v = sqrtf(2.0f * max_accel * fabsf(error)); // max vel for breaking
+
+    float max_accel = 30.0f; 
+    float safe_v = sqrtf(2.0f * max_accel * fabsf(error));
 
     if (req_v > safe_v) req_v = safe_v;
     if (req_v < -safe_v) req_v = -safe_v;
-
     if (req_v > max_speed) req_v = max_speed;
     if (req_v < -max_speed) req_v = -max_speed;
-
     float max_vel = max_accel * dt;
     if (req_v > stepper->_target_speed + max_vel) {
         stepper->_target_speed += max_vel;
@@ -206,6 +223,17 @@ void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, G
         stepper->_target_speed -= max_vel;
     } else {
         stepper->_target_speed = req_v;
+    }
+
+    float min_hz = 1.7f;
+    float current_hz = fabsf(stepper->_target_speed) * stepper->steps_per_unit;
+    
+    if (current_hz > 0.0f && current_hz < min_hz) {
+        if (error > 0.0f) {
+            stepper->_target_speed = min_hz / stepper->steps_per_unit;
+        } else {
+            stepper->_target_speed = -min_hz / stepper->steps_per_unit;
+        }
     }
 
     stepper_command(stepper->_target_speed, stepper->steps_per_unit, htim, channel, dir_port, dir_pin, stepper->_dir);
