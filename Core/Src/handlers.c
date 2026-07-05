@@ -52,41 +52,7 @@ void update_rotary_encoder(Encoder *enc, uint16_t raw_spi, float dt){
   enc -> _last_velocity = enc -> _velocity;
 }
 
-void update_pwm_encoder(Encoder *enc, TIM_HandleTypeDef *htim, float dt) {
-    uint32_t period = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);
-    uint32_t duty   = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2);
 
-    if (period == 0) return; // no enc or no timer
-    float duty_cycle = (float)duty / (float)period;
-    float angle_steps = (duty_cycle * 4119.0f) - 16.0f;
-
-    if (angle_steps < 0.0f) angle_steps = 0.0f; // error
-    if (angle_steps > 4095.0f) angle_steps = 4095.0f; // error
-
-    // extract angle from 0 to 360
-    float new_pos = (angle_steps / 4095.0f) * 360.0f;
-    float diff = new_pos - enc->_last_raw_pos;
-    if (diff > 180.0f) {
-        diff -= 360.0f;
-        enc->_turns--;
-    }
-    else if (diff < -180.0f) {
-        diff += 360.0f;
-        enc->_turns++;
-    }
-
-    enc->_last_raw_pos = new_pos;
-    float total_pos_deg = (enc->_turns * 360.0f) + new_pos;
-    enc->_converted_value = (total_pos_deg - enc->_offset);
-
-    float instant_vel = diff / dt;
-    enc->_velocity = (enc->_velocity * 0.99f) + (instant_vel * 0.01f);
-    enc->_last_converted_value = enc->_converted_value;
-    
-    float inst_acc = (enc->_velocity - enc->_last_velocity) / dt;
-    enc->_acceleration = enc->_acceleration * 0.95f + inst_acc * 0.05f;
-    enc->_last_velocity = enc->_velocity;
-}
 /*
   ____            _   _____ _                
  |  _ \ ___  __ _| | |_   _(_)_ __ ___   ___ 
@@ -165,7 +131,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
         if (machine_state == HOMING || machine_state == RUN) {
               // stepper_loop(&axis_Z1, &htim17, TIM_CHANNEL_1, DIR_Z1_GPIO_Port, DIR_Z1_Pin, 20.0f, 2.0f, 0.01f, dt);
               stepper_loop(&axis_Z1, &htim17, TIM_CHANNEL_1, DIR_Z1_GPIO_Port, DIR_Z1_Pin, 3.0f, 1.0f, dt);
-              stepper_command(axis_Z1._current_speed_hz, axis_Z2.steps_per_unit, &htim3, TIM_CHANNEL_2, DIR_Z2_GPIO_Port, DIR_Z2_Pin, 0); 
+              stepper_command(axis_Z1._current_speed_hz, axis_Z2.steps_per_unit, &htim3, TIM_CHANNEL_2, DIR_Z2_GPIO_Port, DIR_Z2_Pin, 0);  // master-slave
               enc_rot_Z._converted_value += (axis_Z1._current_speed_hz * dt);
               
               stepper_loop(&axis_A1, &htim15, TIM_CHANNEL_1, DIR_P1_GPIO_Port, DIR_P1_Pin, 25.0f, 1.5f,dt);              
@@ -227,7 +193,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
           axis_X._pid_pos._setpoint = axis_X._target_pos;
           axis_X._pid_vel._setpoint = PID_compute_pos(&axis_X._pid_pos, enc_lin_X._converted_value, dt_pos) + axis_X._target_vel;
           axis_Y._pid_pos._setpoint = axis_Y._target_pos;
-          axis_Y._pid_vel._setpoint = PID_compute_pos(&axis_Y._pid_pos, enc_lin_Y._converted_value, dt_pos); // + axis_Y._target_vel;
+          axis_Y._pid_vel._setpoint = PID_compute_pos(&axis_Y._pid_pos, enc_lin_Y._converted_value, dt_pos) + axis_Y._target_vel;
         
           // Feedback packet to send to the raspi
           static uint32_t current_msg_id = 0;
@@ -437,7 +403,7 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 
-  // debouncing shit
+  // debouncing s
   static uint32_t last_interrupt_time = 0;
   uint32_t current_time = HAL_GetTick();
   if (current_time - last_interrupt_time < 100) {
@@ -447,7 +413,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 
   static uint8_t x_homed = 0;
   static uint8_t y_homed = 0;
-  // static uint8_t z_homed = 0;
+  static uint8_t z_homed = 0;
 
   if(machine_state == HOMING) {
 
@@ -494,7 +460,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
     }
 
     if (GPIO_Pin == ES_Z1_Pin) {
-      // z_homed = 1;
+      z_homed = 1;
       __HAL_TIM_SET_COMPARE(&htim17, TIM_CHANNEL_1, 0);
 
       enc_rot_Z._offset = 0.0f;
@@ -507,13 +473,13 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
       axis_Z2._current_speed_hz = 0.0f;
     }
 
-    if(x_homed == 1 && y_homed == 1) {
+    if(x_homed == 1 && y_homed == 1 && z_homed == 1) {
       machine_state = RUN;
       
       // for the next homing
       x_homed = 0;
       y_homed = 0;
-      // z_homed = 0;
+      z_homed = 0;
     }
   
   } else if(machine_state == RUN) {
@@ -527,6 +493,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
     __HAL_TIM_SET_COMPARE(&htim15, TIM_CHANNEL_1, 0);
     __HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_2, 0);
 
+    // disable steppers
     HAL_GPIO_WritePin(EN_STEPPERS_GPIO_Port, EN_STEPPERS_Pin, GPIO_PIN_SET);
 
     machine_state = INIT;

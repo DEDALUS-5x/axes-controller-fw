@@ -76,10 +76,8 @@ void PID_compute_vel(Axis *axis, float dt) {
   } else {
       axis -> _pid_vel._integral = 0.0f;
   }
-  // Derivativa con Filtro Passa-Basso (N)
-  // Fondamentale per non amplificare il rumore della derivazione numerica
+  // derivative D and filterin N
   float raw_D = axis -> _pid_vel._kd * (error - axis -> _pid_vel._last_error) / dt;
-  // Filtro alpha (N = 100 in Simulink corrisponde a circa 0.1 qui)
   float filtered_D = (axis -> _pid_vel._last_D * 0.9f) + (raw_D * 0.1f); 
   axis -> _pid_vel._last_D = filtered_D;
   axis -> _pid_vel._last_error = error;
@@ -98,8 +96,6 @@ void PID_compute_vel(Axis *axis, float dt) {
   if (out < -axis -> _pid_vel._output_limit) out = -axis -> _pid_vel._output_limit;
 
   axis -> _pid_vel._output = out;
-  
-  // *(axis -> _pwm_register) = (uint32_t)fabsf(out);
 }
 
 void motor_command(Axis *axis, TIM_HandleTypeDef *htim, uint32_t channel1, uint32_t channel2) {
@@ -124,8 +120,6 @@ void motor_command(Axis *axis, TIM_HandleTypeDef *htim, uint32_t channel1, uint3
 
 */
 
-
-
 void stepper_command(float speed,  float steps_per_unit, TIM_HandleTypeDef *htim, uint32_t channel, GPIO_TypeDef *dir_port, uint16_t dir_pin, uint8_t dir) {
 
     if(dir == 0) {
@@ -149,18 +143,18 @@ void stepper_command(float speed,  float steps_per_unit, TIM_HandleTypeDef *htim
         timer_base_clock = HAL_RCC_GetPCLK1Freq() * 2; // APB1 x2 on H7
     }
 
-    uint32_t psc = htim->Instance->PSC + 1; // Il registro PSC è (valore - 1)
+    uint32_t psc = htim->Instance->PSC + 1; // PSC è (valore - 1)
 
     uint32_t arr_val = (uint32_t)((float)timer_base_clock / (float)(psc * freq)) - 1;
 
-    if (arr_val < 10) arr_val = 10; // Evita frequenze troppo alte per il driver Moons'
+    if (arr_val < 10) arr_val = 10; // keep low freqs
     if (arr_val > 0xFFFF && (htim->Instance != TIM2 && htim->Instance != TIM5)) {
-        arr_val = 0xFFFF; // Limite per timer a 16 bit
+        arr_val = 0xFFFF; // hard limit for 16bit timer
     }
 
     htim->Instance->CR1 &= ~TIM_CR1_ARPE;
     __HAL_TIM_SET_AUTORELOAD(htim, arr_val);
-    __HAL_TIM_SET_COMPARE(htim, channel, arr_val / 2); // Duty cycle al 50% 
+    __HAL_TIM_SET_COMPARE(htim, channel, arr_val / 2); // 50% duty cycle 
 
     // check anti glitch
     if (htim->Instance->CNT > arr_val) {

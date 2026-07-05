@@ -173,7 +173,7 @@ int main(void)
   axis_X._enc_lin = &enc_lin_X;
   axis_X._pwm_register = &TIM1->CCR1;
   axis_X._enc_rot -> _offset = 0.0f;
-  PID_init(&axis_X._pid_pos, 100.0f, 0.01f, 0.001f, 100.0f, 1000.0f); // 300mm/min -> 5mm/s
+  PID_init(&axis_X._pid_pos, 100.0f, 0.01f, 0.001f, 100.0f, 1000.0f); 
   PID_init(&axis_X._pid_vel, 40.0f, 0.01f, 0.001f, 8000.0f, 1000.0f);
   HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_ALL);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1); 
@@ -240,8 +240,7 @@ int main(void)
   axis_A2.steps_per_unit = 8.888889f;
   axis_A2._dir = 1; // reverse direction
   axis_A2._in_position = 0;
-  HAL_TIMEx_PWMN_Start(&htim16, TIM_CHANNEL_1);  // HAL_TIM_IC_Start(&htim4, TIM_CHANNEL_1); // period
-  // HAL_TIM_IC_Start(&htim4, TIM_CHANNEL_2); // duty
+  HAL_TIMEx_PWMN_Start(&htim16, TIM_CHANNEL_1); 
 
   /*
      ____      _          _     
@@ -257,8 +256,6 @@ int main(void)
   axis_C._dir = 1;
   axis_C._in_position = 0;
   HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_2);
-  // HAL_TIM_IC_Start(&htim23, TIM_CHANNEL_1); // period
-  // HAL_TIM_IC_Start(&htim23, TIM_CHANNEL_2); // duty
   
   HAL_Delay(2);
   update_rotary_encoder(&enc_rot_A, spi4_rx_buf[0], 0.002);
@@ -331,7 +328,6 @@ int main(void)
     SCB_CleanDCache_by_Addr((uint32_t*)spi3_tx_buf_active, sizeof(spi3_tx_buf_active));
   SCB_CleanDCache_by_Addr((uint32_t*)spi3_rx_buf, sizeof(spi3_rx_buf));
   if (HAL_SPI_TransmitReceive_DMA(&hspi3, spi3_tx_buf_active, spi3_rx_buf, sizeof(SPIPacket)) != HAL_OK) {
-      // Se fallisce l'avvio del DMA, accende i LED e si ferma per debug
       Error_Handler();
   }
 
@@ -414,7 +410,7 @@ int main(void)
   axis_Z1._target = 0.0f;
   axis_Z2._target = 0.0f;
 
-  // let's start bitches
+  // let's start b
   HAL_TIM_Base_Start_IT(&htim6);
   HAL_Delay(10);
   HAL_GPIO_WritePin(EN_STEPPERS_GPIO_Port, EN_STEPPERS_Pin, GPIO_PIN_RESET);
@@ -429,7 +425,9 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-    
+    /*
+    // DEBUG prints
+
     __disable_irq();
     // uint16_t raw_y = spi2_rx_buf[0];
     float pos_y = enc_lin_Y._converted_value;
@@ -445,8 +443,7 @@ int main(void)
     
     HAL_UART_Transmit(&huart1, (uint8_t*)serial_buf, strlen(serial_buf), 10);
     HAL_Delay(100);
-  
-    
+    */
 
   }
   /* USER CODE END 3 */

@@ -78,21 +78,11 @@ extern Encoder enc_lin_X, enc_lin_Y;
  * 
  * @brief Function that takes the raw AS5048a data, directly from the SPI and convert it to the effective angular position of the stepper motor
  * @param enc Pointer to `Encoder` instance
- * @param raw_spi raw data coming from the SPI DMA buffer
- * @param dt time interval
+ * @param raw_spi Raw data coming from the SPI DMA buffer
+ * @param dt Time interval
  * 
  */
 void update_rotary_encoder(Encoder *enc, uint16_t raw_spi, float dt);
-
-/**
- * 
- * @brief This function takes the raw PWM data from the TIM peripheral and converts it to the effective angular position of the stepper motor. At first, it calculates the duty cycle and the period of the PWM signal, then it calculates the angle in steps and finally it converts it to degrees. It also calculates the velocity and acceleration of the encoder. Regarding the angle calculation, it takes into account the offset of 16 ticks. The function also handles the case when the encoder is not connected or when the timer is not running.
- * @param enc Pointer to `Encoder` instance
- * @param htim Pointer to `TIM_HandleTypeDef` instance
- * @param dt time interval
- * 
- */
-void update_pwm_encoder(Encoder *enc, TIM_HandleTypeDef *htim, float dt);
 
 /**
  * 
@@ -104,7 +94,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim);
 /**
  * 
  * @brief Handler of the SPI communication. It is called whenever a full-duplex communication is performed
- * @param hspi SPI instance. SPI1 and SPI2 are devoted to AS5048a acquisitino, while SPI3 is devoted to raspberry communication
+ * @param hspi SPI instance. SPI1 and SPI2, SPI4 and SPI6 are devoted to AS5048a acquisitino, while SPI3 is devoted to raspberry communication
  */
 void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi);
 

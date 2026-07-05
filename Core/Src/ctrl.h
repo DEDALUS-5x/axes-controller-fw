@@ -23,6 +23,16 @@ extern TIM_HandleTypeDef htim3;
 extern TIM_HandleTypeDef htim15;
 extern TIM_HandleTypeDef htim16;
 
+/**
+ * 
+ * @brief PID initialization function. It initializes the PID struct with the given parameters
+ * @param pid Pointer to `PID` instance
+ * @param kp Proportional gain
+ * @param ki Integral gain
+ * @param kd Derivative gain
+ * @param limit Output limit
+ * @param w_limit Anti-windup limit
+ */
 void PID_init(PID *pid, float kp, float ki, float kd, float limit, float w_limit);
 
 // void PID_compute(Axis *axis, float dt);
@@ -65,16 +75,26 @@ void motor_command(Axis *axis, TIM_HandleTypeDef *htim, uint32_t channel1, uint3
  * 
  * @brief Stepper command function that outputs and modulate the pwm for the driver
  * @param speed Required speed
+ * @param seps_per_unit Steps per unit of the stepper motor
  * @param htim Pointer to Timer instance
  * @param channel Timer channel
  * @param dir GPIO port for the DIR pin
  * @param dir_pin GPIO pin for the DIR pin
+ * @param dir Direction of the stepper motor
  */
 void stepper_command(float speed, float steps_per_unit, TIM_HandleTypeDef *htim, uint32_t channel, GPIO_TypeDef *dir_port, uint16_t dir_pin, uint8_t dir);
 
 /**
  * 
- * @brief Stepper loop function
+ * @brief Stepper loop function that implements a simple P controller for the stepper motor. It is called by 10kHz
+ * @param stepper Pointer to `Stepper` instance
+ * @param htim Pointer to Timer instance
+ * @param channel Timer channel
+ * @param dir_port GPIO port for the DIR pin
+ * @param dir_pin GPIO pin for the DIR pin
+ * @param max_speed Maximum speed of the stepper motor
+ * @param kp Proportional gain
+ * @param dt time interval
  */
 void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, GPIO_TypeDef *dir_port, uint16_t dir_pin, float max_speed, float kp, float dt);
 
