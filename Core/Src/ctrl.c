@@ -174,33 +174,34 @@ void stepper_command(float speed,  float steps_per_unit, TIM_HandleTypeDef *htim
 void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, GPIO_TypeDef *dir_port, uint16_t dir_pin, float max_speed, float kp, float dt) {
 
     float raw_error = stepper->_target - stepper->_enc_rot->_converted_value;
-    float step_deg = 1.0f / stepper->steps_per_unit; 
     
-    // 1/2 step + margin
-    float inner_tol = step_deg * 0.6f; 
-    float outer_tol = step_deg * 1.5f; 
+    float alpha_err = 0.2f; 
+    float error = (stepper->_last_error * (1.0f - alpha_err)) + (raw_error * alpha_err);
+    stepper->_last_error = error;
+
+    float step_deg = 1.0f / stepper->steps_per_unit; 
+    float encoder_noise_floor = 0.05f;
+
+    // noise on the encoder is about 0.05 deg, so we add it to the tolerance
+    float inner_tol = (step_deg * 0.6f) + (encoder_noise_floor * 0.5f); 
+    float outer_tol = (step_deg * 1.5f) + encoder_noise_floor; 
 
     if (stepper->_in_position == 1) {
-        if (fabsf(raw_error) > outer_tol) {
+        if (fabsf(error) > outer_tol) {
             stepper->_in_position = 0; 
         } else {
             stepper_command(0.0f, stepper->steps_per_unit, htim, channel, dir_port, dir_pin, stepper->_dir);
             return;
         }
     } else {
-        if (fabsf(raw_error) < inner_tol) {
+        if (fabsf(error) < inner_tol) {
             stepper_command(0.0f, stepper->steps_per_unit, htim, channel, dir_port, dir_pin, stepper->_dir);
             stepper->_current_speed_hz = 0.0f;
             stepper->_target_speed = 0.0f;
             stepper->_in_position = 1;
-            stepper->_last_error = 0.0f; 
             return;
         }
     }
-
-    float alpha_err = 0.5f;
-    float error = (stepper->_last_error * (1.0f - alpha_err)) + (raw_error * alpha_err);
-    stepper->_last_error = error;
 
     float req_v = error * kp;
     float max_accel = 30.0f; 
