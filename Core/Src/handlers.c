@@ -240,9 +240,24 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
         if(++led_counter >= 10000){
           led_counter = 0;
           HAL_GPIO_TogglePin(LED_1_GPIO_Port, LED_1_Pin);
+
+          // watchdog spi3 raspi
+          if (hspi3.State == HAL_SPI_STATE_READY) {
+            HAL_SPI_DMAStop(&hspi3); 
+            __HAL_SPI_CLEAR_OVRFLAG(&hspi3);
+            __HAL_SPI_CLEAR_FREFLAG(&hspi3);
+            HAL_SPI_TransmitReceive_DMA(&hspi3, spi3_tx_buf_active, spi3_rx_buf, sizeof(SPIPacket));
+          }
         }
 
-        if(machine_state == HOMING || machine_state == RUN){
+        if(machine_state == HOMING){
+
+          axis_X._pid_vel._output = -2000.0f;
+          axis_Y._pid_vel._output = 2000.0f;
+          motor_command(&axis_X, &htim1, TIM_CHANNEL_1, TIM_CHANNEL_2);
+          motor_command(&axis_Y, &htim1, TIM_CHANNEL_3, TIM_CHANNEL_4);
+
+        } else if(machine_state == RUN){
 
           // continuity
           axis_X._target_pos += axis_X._target_vel * dt;
@@ -386,7 +401,12 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
     // clena errors and restart DMA
     __HAL_SPI_CLEAR_OVRFLAG(&hspi3); 
     __HAL_SPI_CLEAR_FREFLAG(&hspi3);
-    HAL_SPI_TransmitReceive_DMA(&hspi3, spi3_tx_buf_active, spi3_rx_buf, sizeof(SPIPacket));
+    
+    if (packet.start == 0xAA || packet.start == 0xCC) {
+      HAL_SPI_TransmitReceive_DMA(&hspi3, spi3_tx_buf_active, spi3_rx_buf, sizeof(SPIPacket));
+    } else{
+      HAL_SPI_DMAStop(&hspi3); // noise, restart it at 1s period
+    }
 
   }
 }

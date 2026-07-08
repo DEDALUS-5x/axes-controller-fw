@@ -121,6 +121,8 @@ int main(void)
 
   /* Configure the system clock */
   SystemClock_Config();
+  SCB_EnableICache();
+  SCB_EnableDCache();
 
   /* Configure the peripherals common clocks */
   PeriphCommonClock_Config();
@@ -325,12 +327,9 @@ int main(void)
   */
   memset(spi3_tx_buf_active, 0, sizeof(spi3_tx_buf_active));
   spi3_tx_buf_active[0] = 0xBB; 
-    SCB_CleanDCache_by_Addr((uint32_t*)spi3_tx_buf_active, sizeof(spi3_tx_buf_active));
+  SCB_CleanDCache_by_Addr((uint32_t*)spi3_tx_buf_active, sizeof(spi3_tx_buf_active));
   SCB_CleanDCache_by_Addr((uint32_t*)spi3_rx_buf, sizeof(spi3_rx_buf));
-  if (HAL_SPI_TransmitReceive_DMA(&hspi3, spi3_tx_buf_active, spi3_rx_buf, sizeof(SPIPacket)) != HAL_OK) {
-      Error_Handler();
-  }
-
+  
   /*
     ____  ____ ___ _  _     ___       _ _   
    / ___||  _ \_ _| || |   |_ _|_ __ (_) |_ 
@@ -402,18 +401,18 @@ int main(void)
 
   axis_X._target_pos = 0.0f;
   axis_X._target_vel = 0.0f;
-  axis_Y._target_pos = -0.0f;
+  axis_Y._target_pos = 0.0f;
   axis_Y._target_vel = 0.0f;
-  axis_A1._target = 20.0f;
-  axis_A2._target = 20.0f;
+  axis_A1._target = 2.0f;
+  axis_A2._target = 2.0f;
   axis_C._target = 10.0f;
   axis_Z1._target = 0.0f;
   axis_Z2._target = 0.0f;
 
   // let's start b
-  HAL_TIM_Base_Start_IT(&htim6);
   HAL_Delay(10);
-  HAL_GPIO_WritePin(EN_STEPPERS_GPIO_Port, EN_STEPPERS_Pin, GPIO_PIN_RESET);
+  HAL_TIM_Base_Start_IT(&htim6);
+  // HAL_GPIO_WritePin(EN_STEPPERS_GPIO_Port, EN_STEPPERS_Pin, GPIO_PIN_RESET);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -569,6 +568,7 @@ void Error_Handler(void)
   /* User can add his own implementation to report the HAL error return state */
   __disable_irq();
   HAL_GPIO_WritePin(LED_2_GPIO_Port, LED_2_Pin, GPIO_PIN_SET);
+  while(1){}
   /* USER CODE END Error_Handler_Debug */
 }
 #ifdef USE_FULL_ASSERT

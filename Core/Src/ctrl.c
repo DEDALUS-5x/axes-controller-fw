@@ -180,7 +180,7 @@ void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, G
     stepper->_last_error = error;
 
     float step_deg = 1.0f / stepper->steps_per_unit; 
-    float encoder_noise_floor = 0.05f;
+    float encoder_noise_floor = 0.1f;
 
     // noise on the encoder is about 0.05 deg, so we add it to the tolerance
     float inner_tol = (step_deg * 0.6f) + (encoder_noise_floor * 0.5f); 
