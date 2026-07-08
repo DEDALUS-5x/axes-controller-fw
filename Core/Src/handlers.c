@@ -20,6 +20,10 @@ static volatile uint8_t spi2_need_clear = 0;
 static volatile uint8_t spi4_need_clear = 0;
 static volatile uint8_t spi6_need_clear = 0;
 
+static uint8_t x_homed = 0;
+static uint8_t y_homed = 0;
+static uint8_t z_homed = 0;
+
 void update_rotary_encoder(Encoder *enc, uint16_t raw_spi, float dt){
 
   if (raw_spi & 0x4000) {
@@ -252,10 +256,27 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
         if(machine_state == HOMING){
 
-          axis_X._pid_vel._output = -2000.0f;
-          axis_Y._pid_vel._output = 2000.0f;
+          if(x_homed == 0){
+            axis_X._pid_vel._output = -1000.0f;
+          } else {
+            axis_X._pid_vel._output = 0.0f;
+          }
           motor_command(&axis_X, &htim1, TIM_CHANNEL_1, TIM_CHANNEL_2);
+
+          if(y_homed == 0){
+            axis_Y._pid_vel._output = 1000.0f;
+          } else {
+            axis_Y._pid_vel._output = 0.0f;
+          }
           motor_command(&axis_Y, &htim1, TIM_CHANNEL_3, TIM_CHANNEL_4);
+
+          if(z_homed == 0){
+            axis_Z1._current_speed_hz = -1.0f;
+          } else{
+            axis_Z1._current_speed_hz = 0.0f;
+          }
+          stepper_command(axis_Z1._current_speed_hz, axis_Z1.steps_per_unit, &htim17, TIM_CHANNEL_1, DIR_Z1_GPIO_Port, DIR_Z1_Pin, 0);  // master-slave
+          stepper_command(axis_Z1._current_speed_hz, axis_Z2.steps_per_unit, &htim3, TIM_CHANNEL_2, DIR_Z2_GPIO_Port, DIR_Z2_Pin, 0);  // master-slave
 
         } else if(machine_state == RUN){
 
@@ -393,6 +414,10 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
       axis_A2._in_position = 0;
       axis_C._in_position = 0;
 
+      x_homed = 0;
+      y_homed = 0;
+      z_homed = 0;
+
       // motors command already embedded in tim6 handler. just keep a constnat pid output (pid disabled)
     }
 
@@ -431,10 +456,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
   }
   last_interrupt_time = current_time;
 
-  static uint8_t x_homed = 0;
-  static uint8_t y_homed = 0;
-  static uint8_t z_homed = 0;
-
   if(machine_state == HOMING) {
 
     if (GPIO_Pin == ES_X_Pin && x_homed == 0) {
@@ -470,8 +491,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
       enc_rot_Y._offset = (enc_rot_Y._turns * 360.0f) + enc_rot_Y._last_raw_pos;
       enc_rot_Y._turns = 0;
 
-      TIM3 -> CNT = 0;
+      TIM5 -> CNT = 0;
       enc_lin_Y._converted_value = 0.0f;
+      enc_rot_Y._converted_value = 0.0f;
       axis_Y._pid_pos._setpoint = 0.0f;
       axis_Y._pid_vel._setpoint = 0.0f;
 

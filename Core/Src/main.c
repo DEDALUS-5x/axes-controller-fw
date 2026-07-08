@@ -424,25 +424,23 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-    /*
     // DEBUG prints
 
     __disable_irq();
     // uint16_t raw_y = spi2_rx_buf[0];
-    float pos_y = enc_lin_Y._converted_value;
-    float pos_z = enc_rot_Z._converted_value;
+    float pos_y = axis_Y._enc_lin->_converted_value;
+    float pos_x = axis_X._enc_lin->_converted_value;
     float pos_a = enc_rot_A._converted_value;
     float psos_c = enc_rot_C._converted_value;
     __enable_irq();
 
     // char err_y = (raw_y & 0x4000) ? 'E' : 'O';
 
-  sprintf(serial_buf, "pos_y: %d | pos_z: %d | pos_a: %d | pos_c: %d | z target: %d\r\n", (int)pos_y, (int)pos_z, (int)pos_a, (int)psos_c, (int)axis_Z1._target);
+  sprintf(serial_buf, "pos_y: %d | pos_x: %d | pos_a: %d | pos_c: %d | z target: %d\r\n", (int)pos_y, (int)pos_x, (int)pos_a, (int)psos_c, (int)axis_Z1._target);
     // sprintf(serial_buf, "RAW Y[0]: 0x%04X (%c) | Pos Y: %d | LIN Y: %d\r\n", raw_y, err_y, (int)pos_y, (int)pos_lin);
     
     HAL_UART_Transmit(&huart1, (uint8_t*)serial_buf, strlen(serial_buf), 10);
     HAL_Delay(100);
-    */
 
   }
   /* USER CODE END 3 */
