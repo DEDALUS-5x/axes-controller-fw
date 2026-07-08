@@ -21,6 +21,7 @@
 #define TOL2MM 0.01f
 #define IN_PERIOD 0.0001f // 10kHz Period
 #define OUT_PERIOD 0.001f // 1kHz Period
+#define MAX_Y 150.0f;
 
 #define INIT 0
 #define HOMING 1

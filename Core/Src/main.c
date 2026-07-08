@@ -401,7 +401,7 @@ int main(void)
 
   axis_X._target_pos = 0.0f;
   axis_X._target_vel = 0.0f;
-  axis_Y._target_pos = 0.0f;
+  axis_Y._target_pos = -0.0f;
   axis_Y._target_vel = 0.0f;
   axis_A1._target = 2.0f;
   axis_A2._target = 2.0f;
@@ -426,6 +426,7 @@ int main(void)
 
     // DEBUG prints
 
+    /*
     __disable_irq();
     // uint16_t raw_y = spi2_rx_buf[0];
     float pos_y = axis_Y._enc_lin->_converted_value;
@@ -436,11 +437,12 @@ int main(void)
 
     // char err_y = (raw_y & 0x4000) ? 'E' : 'O';
 
-  sprintf(serial_buf, "pos_y: %d | pos_x: %d | pos_a: %d | pos_c: %d | z target: %d\r\n", (int)pos_y, (int)pos_x, (int)pos_a, (int)psos_c, (int)axis_Z1._target);
+  sprintf(serial_buf, "pos_y: %d | pos_x: %d | pos_a: %d | pos_c: %d | machine_State: %d\r\n", (int)pos_y, (int)pos_x, (int)pos_a, (int)psos_c, (int)machine_state);
     // sprintf(serial_buf, "RAW Y[0]: 0x%04X (%c) | Pos Y: %d | LIN Y: %d\r\n", raw_y, err_y, (int)pos_y, (int)pos_lin);
     
     HAL_UART_Transmit(&huart1, (uint8_t*)serial_buf, strlen(serial_buf), 10);
     HAL_Delay(100);
+    */
 
   }
   /* USER CODE END 3 */
