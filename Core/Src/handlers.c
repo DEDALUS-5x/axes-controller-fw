@@ -448,18 +448,19 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 
-  // debouncing s
-  static uint32_t last_interrupt_time = 0;
-  uint32_t current_time = HAL_GetTick();
-  if (current_time - last_interrupt_time < 100) {
+  if (GPIO_Pin != ES_X_Pin && GPIO_Pin != ES_Y1_Pin && GPIO_Pin != ES_Z1_Pin) {
       return; 
   }
-  last_interrupt_time = current_time;
+
+  uint32_t current_time = HAL_GetTick();
+  static uint32_t last_time_x = 0;
+  static uint32_t last_time_y = 0;
+  static uint32_t last_time_z = 0;
 
   if(machine_state == HOMING) {
 
     if (GPIO_Pin == ES_X_Pin && x_homed == 0) {
-      
+      if (current_time - last_time_x < 100) return;      
       x_homed = 1;
       // stop motors
       __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 0);
@@ -481,7 +482,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
     }
 
     if (GPIO_Pin == ES_Y1_Pin && y_homed == 0) {
-
+      if (current_time - last_time_y < 100) return;
       y_homed = 1;
       // stop motors
       __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 0);
@@ -507,6 +508,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
       max_y = max_y * 100; 
       TIM5 -> CNT = max_y; // 30cm
       enc_lin_Y._converted_value = MAX_Y;
+      // enc_rot_X._converted_value = MAX_Y;
       axis_Y._pid_pos._setpoint = MAX_Y;
       axis_Y._pid_vel._setpoint = 0.0f;
 
@@ -515,6 +517,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
     }
 
     if (GPIO_Pin == ES_Z1_Pin) {
+      if (current_time - last_time_z < 100) return;
       z_homed = 1;
       __HAL_TIM_SET_COMPARE(&htim17, TIM_CHANNEL_1, 0);
 
