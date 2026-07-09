@@ -51,6 +51,7 @@ typedef struct {
     float _target_vel; // from feedforward
     float _last_vel;
     float _ka;
+    float _kickstart;
 
     volatile uint32_t *_pwm_register; //registro CCR del timer pwm
 } Axis;

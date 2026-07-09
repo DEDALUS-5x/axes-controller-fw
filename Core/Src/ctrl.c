@@ -84,12 +84,12 @@ void PID_compute_vel(Axis *axis, float dt) {
 
   float stiction_pwm = 0.0f;
   
-  float deadband = 400.0f; 
-    if (axis->_target_vel > 0.02f) {
-      stiction_pwm = deadband;
+  if (axis->_target_vel > 0.02f) {
+      stiction_pwm = axis -> _kickstart;
   } else if (axis->_target_vel < -0.02f) {
-      stiction_pwm = -deadband;
+      stiction_pwm = -(axis -> _kickstart);
   }
+
   float out = P + axis->_pid_vel._integral + filtered_D + (accel * axis->_ka) + stiction_pwm;
 
   if (out > axis -> _pid_vel._output_limit) out = axis -> _pid_vel._output_limit;
