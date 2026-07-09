@@ -232,5 +232,7 @@ void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, G
         }
     }
 
+    stepper->_current_speed_hz = stepper->_target_speed;
+
     stepper_command(stepper->_target_speed, stepper->steps_per_unit, htim, channel, dir_port, dir_pin, stepper->_dir);
 }
