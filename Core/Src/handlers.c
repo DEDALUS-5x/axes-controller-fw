@@ -70,12 +70,9 @@ void update_rotary_encoder(Encoder *enc, uint16_t raw_spi, float dt){
   }
 
   enc->_last_raw_pos = new_pos;
-  float total_pos_deg = (enc->_turns * 360.0f) + new_pos;
-  float raw_converted = (total_pos_deg - enc->_offset) / enc->g_ratio;
   enc->_converted_value = (enc->_converted_value * 0.5f) + (raw_converted * 0.5f);
 
-  float instant_vel = diff / dt;
-  
+  float instant_vel = diff / dt;  
   enc -> _velocity = (enc->_velocity * 0.9) + (instant_vel * 0.1f);
   enc -> _last_converted_value = enc->_converted_value;
   enc -> _acceleration = enc -> _acceleration * 0.95f + ((enc -> _velocity - enc -> _last_velocity) / dt) * 0.05f;
