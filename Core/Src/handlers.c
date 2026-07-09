@@ -36,15 +36,40 @@ void update_rotary_encoder(Encoder *enc, uint16_t raw_spi, float dt){
   
   if (diff > 180.0f) {
     diff -= 360.0f;
-    enc->_turns--;
+
+    if(enc -> _continuous){
+      enc -> _turns--;
+    } else{
+      enc -> _turns = 0;
+    }
   }
   else if (diff < -180.0f) {
     diff += 360.0f;
-    enc->_turns++;
+    if(enc -> _continuous){
+      enc -> _turns++;
+    } else{
+      enc -> _turns = 0;
+    }
+  }
+
+  float raw_converted = 0;
+  if(enc -> _continuous){
+    float total_pos_deg = (enc->_turns * 360.0f) + new_pos;
+    raw_converted = (total_pos_deg - enc->_offset) / enc->g_ratio;
+  
+  } else{
+
+    float relative = new_pos - enc -> _offset;
+    if(relative < 180.0f){
+      relative -= 360.0f;
+    } else if(relative > 180.0f){
+      relative += 360.0f;
+    }
+
+    raw_converted = relative / enc->g_ratio;
   }
 
   enc->_last_raw_pos = new_pos;
-
   float total_pos_deg = (enc->_turns * 360.0f) + new_pos;
   float raw_converted = (total_pos_deg - enc->_offset) / enc->g_ratio;
   enc->_converted_value = (enc->_converted_value * 0.5f) + (raw_converted * 0.5f);

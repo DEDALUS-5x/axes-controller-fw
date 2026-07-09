@@ -38,6 +38,8 @@ typedef struct {
     float _acceleration;
     int32_t _turns;
 
+    uint8_t _continuous;
+
 } Encoder;
 
 typedef struct {
