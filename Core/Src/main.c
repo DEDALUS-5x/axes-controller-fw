@@ -233,6 +233,7 @@ int main(void)
                                   
   */
   axis_A1._enc_rot = &enc_rot_A;
+  axis_A1._enc_rot->_continuous = 1;
   axis_A1._enc_rot -> _offset = 0.0f;
   axis_A1.steps_per_unit = 8.888889f;
   axis_A1._dir = 0;
@@ -254,6 +255,7 @@ int main(void)
     \____| /_/   \_\/_/\_\_|___/
                                 
   */
+  enc_rot_C._continuous = 1;
   axis_C._enc_rot = &enc_rot_C;
   axis_C._enc_rot -> _offset = 0.0f;
   axis_C.steps_per_unit = 8.888889f;
@@ -428,11 +430,10 @@ int main(void)
 
     // DEBUG prints
 
-    /*
     __disable_irq();
     // uint16_t raw_y = spi2_rx_buf[0];
     float pos_y = axis_Y._enc_lin->_converted_value;
-    float pos_x = axis_X._enc_lin->_converted_value;
+    float pos_x = axis_X._enc_rot->_converted_value;
     float pos_a = enc_rot_A._converted_value;
     float psos_c = enc_rot_C._converted_value;
     __enable_irq();
@@ -444,7 +445,6 @@ int main(void)
     
     HAL_UART_Transmit(&huart1, (uint8_t*)serial_buf, strlen(serial_buf), 10);
     HAL_Delay(100);
-    */
 
   }
   /* USER CODE END 3 */
