@@ -14,6 +14,7 @@
 
 static uint8_t pid_counter = 0;
 static uint32_t led_counter = 0;
+static uint32_t last_spi_msg = 0;
 
 static volatile uint8_t spi1_need_clear = 0;
 static volatile uint8_t spi2_need_clear = 0;
@@ -56,6 +57,11 @@ void update_rotary_encoder(Encoder *enc, uint16_t raw_spi, float dt){
   enc -> _last_velocity = enc -> _velocity;
 }
 
+void sleep_motors(void) {
+  if(HAL_GetTick() - last_spi_msg > MOT_SLEEP_TIMEOUT) {
+    HAL_GPIO_WritePin(EN_STEPPERS_GPIO_Port, EN_STEPPERS_Pin, GPIO_PIN_SET);
+  }
+}
 
 /*
   ____            _   _____ _                
@@ -252,6 +258,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
             __HAL_SPI_CLEAR_FREFLAG(&hspi3);
             HAL_SPI_TransmitReceive_DMA(&hspi3, spi3_tx_buf_active, spi3_rx_buf, sizeof(SPIPacket));
           }
+
+          // sleep steppers
+          sleep_motors();
         }
 
         if(machine_state == HOMING){
@@ -373,6 +382,8 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
     // HAL_SPI_TransmitReceive_DMA(&hspi3, spi3_tx_buf_active, spi3_rx_buf, sizeof(SPIPacket));
 
     if (packet.start == 0xAA && machine_state == RUN) {
+
+      last_spi_msg = HAL_GetTick();
         
       axis_X._target_pos = (axis_X._target_pos * 0.1f) + (packet.x * 0.9f);
       axis_Y._target_pos = (axis_Y._target_pos * 0.1f) + (packet.y * 0.9f);

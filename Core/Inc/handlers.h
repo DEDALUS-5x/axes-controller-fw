@@ -22,6 +22,7 @@
 #define IN_PERIOD 0.0001f // 10kHz Period
 #define OUT_PERIOD 0.001f // 1kHz Period
 #define MAX_Y 150.0f;
+#define MOT_SLEEP_TIMEOUT 10000 // 10 seconds
 
 #define INIT 0
 #define HOMING 1
@@ -84,6 +85,13 @@ extern Encoder enc_lin_X, enc_lin_Y;
  * 
  */
 void update_rotary_encoder(Encoder *enc, uint16_t raw_spi, float dt);
+
+/**
+ * 
+ * @brief Function that puts the stepper motors in sleep mode if no SPI message has been received for a certain amount of time
+ * 
+ */
+void sleep_motors(void);
 
 /**
  * 
