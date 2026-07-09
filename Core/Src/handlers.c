@@ -521,7 +521,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
       __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 0);
       __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_4, 0);
 
-      /*
       // ENDSTOP IN 0
       // offset rot encoder
       enc_rot_Y._offset = (enc_rot_Y._turns * 360.0f) + enc_rot_Y._last_raw_pos;
@@ -532,8 +531,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
       enc_rot_Y._converted_value = 0.0f;
       axis_Y._pid_pos._setpoint = 0.0f;
       axis_Y._pid_vel._setpoint = 0.0f;
-      */
 
+      /*
       // ENDSTOP IN 30cm
       enc_rot_Y._offset = (enc_rot_Y._turns * 360.0f) + enc_rot_Y._last_raw_pos;
       enc_rot_Y._turns = 0;
@@ -544,6 +543,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
       // enc_rot_X._converted_value = MAX_Y;
       axis_Y._pid_pos._setpoint = MAX_Y;
       axis_Y._pid_vel._setpoint = 0.0f;
+      */
 
       PID_reset(&(axis_Y._pid_pos));
       PID_reset(&(axis_Y._pid_vel));
