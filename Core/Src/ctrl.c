@@ -236,3 +236,65 @@ void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, G
 
     stepper_command(stepper->_target_speed, stepper->steps_per_unit, htim, channel, dir_port, dir_pin, stepper->_dir);
 }
+
+void heat_command(GPIO_TypeDef *drive_port, uint16_t drive_pin, GPIO_TypeDef *ntc_port, uint16_t ntc_pin, float temp){
+
+    TempState *current_state;
+    uint32_t  *current_timer;
+    
+    if (drive_pin == H_PWM_Pin) {
+        current_state = &bed_state;
+        current_timer = &bed_timer;
+    } 
+    else if (drive_pin == H_PWM_Pin) {
+        current_state = &ext_state;
+        current_timer = &ext_timer;
+    } 
+    else {
+        return;
+    }
+    
+    if (temp < 10.0f || machine_state == 0 || machine_state == ERROR) {
+        HAL_GPIO_WritePin(drive_port, drive_pin, GPIO_PIN_RESET);
+        *current_state = STATE_OFF;
+        return;
+    }
+    uint8_t is_cold = (HAL_GPIO_ReadPin(ntc_port, ntc_pin) == GPIO_PIN_SET);
+
+    switch (*current_state) {
+        
+        case STATE_OFF: // start to heat when cold
+            if (is_cold) {
+                *current_state = STATE_HEATING;
+                *current_timer = HAL_GetTick(); 
+                HAL_GPIO_WritePin(drive_port, drive_pin, GPIO_PIN_SET);
+            }
+            break;
+
+        case STATE_HEATING: // heating and no more cold
+
+            if (!is_cold) {
+                HAL_GPIO_WritePin(drive_port, drive_pin, GPIO_PIN_RESET);
+                *current_state = STATE_COOLDOWN; 
+                *current_timer = HAL_GetTick();      
+            } 
+            else { // heating, still cold
+                HAL_GPIO_WritePin(drive_port, drive_pin, GPIO_PIN_SET); 
+                if ((HAL_GetTick() - *current_timer) > WATCHDOG_TIME_MS) {
+                    HAL_GPIO_WritePin(drive_port, drive_pin, GPIO_PIN_RESET);
+                    machine_state = ERROR;
+                }
+            }
+            break;
+
+        case STATE_COOLDOWN:
+            HAL_GPIO_WritePin(drive_port, drive_pin, GPIO_PIN_RESET); 
+            if ((HAL_GetTick() - *current_timer) > COOLDOWN_TIME_MS) {
+                if (is_cold) {
+                    *current_state = STATE_HEATING;
+                    *current_timer = HAL_GetTick();
+                }
+            }
+            break;
+    }
+}

@@ -16,12 +16,25 @@
 
 #define DEG_TO_MM (40.0f / 360.0f)
 #define STEPPER_CLOCK 9821428.0f
+#define COOLDOWN_TIME_MS 15000 // 15s
+#define WATCHDOG_TIME_MS 300000 // 30s
+typedef enum {
+    STATE_OFF = 0,
+    STATE_HEATING,
+    STATE_COOLDOWN
+} TempState;
+
+static TempState bed_state = STATE_OFF;
+static uint32_t  bed_timer = 0;
+static TempState ext_state = STATE_OFF;
+static uint32_t  ext_timer = 0;
 
 extern TIM_HandleTypeDef htim8;
 extern TIM_HandleTypeDef htim17;
 extern TIM_HandleTypeDef htim3;
 extern TIM_HandleTypeDef htim15;
 extern TIM_HandleTypeDef htim16;
+extern uint8_t machine_state;
 
 /**
  * 
@@ -97,5 +110,7 @@ void stepper_command(float speed, float steps_per_unit, TIM_HandleTypeDef *htim,
  * @param dt time interval
  */
 void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, GPIO_TypeDef *dir_port, uint16_t dir_pin, float max_speed, float kp, float dt);
+
+void heat_command(GPIO_TypeDef *drive_port, uint16_t drive_pin, GPIO_TypeDef *ntc_port, uint16_t ntc_pin, float temp);
 
 #endif
