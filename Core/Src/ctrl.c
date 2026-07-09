@@ -245,12 +245,10 @@ void heat_command(GPIO_TypeDef *drive_port, uint16_t drive_pin, GPIO_TypeDef *nt
     if (drive_pin == H_PWM_Pin) {
         current_state = &bed_state;
         current_timer = &bed_timer;
-    } 
-    else if (drive_pin == H_PWM_Pin) {
+    } else if (drive_pin == H_PWM_Pin) {
         current_state = &ext_state;
         current_timer = &ext_timer;
-    } 
-    else {
+    } else {
         return;
     }
     

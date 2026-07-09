@@ -78,7 +78,10 @@ Axis axis_X, axis_Y;
 Stepper axis_Z1, axis_Z2, axis_A1, axis_A2, axis_C;
 Encoder enc_rot_X, enc_rot_Y, enc_rot_Z, enc_rot_A, enc_rot_C, enc_rot_F;
 Encoder enc_lin_X, enc_lin_Y;
-
+TempState bed_state = STATE_OFF;
+uint32_t  bed_timer = 0;
+TempState ext_state = STATE_OFF;
+uint32_t  ext_timer = 0;
 
 /* USER CODE END PV */
 

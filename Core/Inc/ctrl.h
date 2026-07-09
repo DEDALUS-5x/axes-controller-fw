@@ -24,10 +24,10 @@ typedef enum {
     STATE_COOLDOWN
 } TempState;
 
-static TempState bed_state = STATE_OFF;
-static uint32_t  bed_timer = 0;
-static TempState ext_state = STATE_OFF;
-static uint32_t  ext_timer = 0;
+extern TempState bed_state;
+extern uint32_t  bed_timer;
+extern TempState ext_state;
+extern uint32_t  ext_timer;
 
 extern TIM_HandleTypeDef htim8;
 extern TIM_HandleTypeDef htim17;
