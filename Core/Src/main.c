@@ -408,7 +408,7 @@ int main(void)
 
   axis_X._target_pos = 0.0f;
   axis_X._target_vel = 0.0f;
-  axis_Y._target_pos = 0.0f;
+  axis_Y._target_pos = -0.0f;
   axis_Y._target_vel = 0.0f;
   axis_A1._target = 2.0f;
   axis_A2._target = 2.0f;

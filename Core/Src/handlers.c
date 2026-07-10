@@ -25,6 +25,8 @@ static uint8_t x_homed = 0;
 static uint8_t y_homed = 0;
 static uint8_t z_homed = 0;
 
+static uint8_t sleeping = 0;
+
 void update_rotary_encoder(Encoder *enc, uint16_t raw_spi, float dt){
 
   if (raw_spi & 0x4000) {
@@ -82,6 +84,7 @@ void update_rotary_encoder(Encoder *enc, uint16_t raw_spi, float dt){
 void sleep_motors(void) {
   if(HAL_GetTick() - last_spi_msg > MOT_SLEEP_TIMEOUT) {
     HAL_GPIO_WritePin(EN_STEPPERS_GPIO_Port, EN_STEPPERS_Pin, GPIO_PIN_SET);
+    sleeping = 1;
   }
 }
 
@@ -405,6 +408,11 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
 
     if (packet.start == 0xAA && machine_state == RUN) {
 
+      if(sleeping){
+        sleeping = 0;
+        HAL_GPIO_WritePin(EN_STEPPERS_GPIO_Port, EN_STEPPERS_Pin, GPIO_PIN_RESET);
+      }
+
       last_spi_msg = HAL_GetTick();
         
       axis_X._target_pos = (axis_X._target_pos * 0.1f) + (packet.x * 0.9f);
@@ -432,7 +440,10 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
     // homing procedure
     if (packet.start == 0xCC) {
 
-      HAL_GPIO_WritePin(EN_STEPPERS_GPIO_Port, EN_STEPPERS_Pin, RESET);
+      if(sleeping){
+        sleeping = 0;
+        HAL_GPIO_WritePin(EN_STEPPERS_GPIO_Port, EN_STEPPERS_Pin, RESET);
+      }      
 
       machine_state = HOMING;
       axis_X._pid_vel._output = -1.0f;
