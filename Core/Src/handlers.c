@@ -495,6 +495,16 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
       return; 
   }
 
+  // noise filtering
+  for(volatile int i = 0; i < 500; i++);
+  GPIO_PinState pin_state;
+  if (GPIO_Pin == ES_X_Pin) pin_state = HAL_GPIO_ReadPin(ES_X_GPIO_Port, ES_X_Pin);
+  else if (GPIO_Pin == ES_Y1_Pin) pin_state = HAL_GPIO_ReadPin(ES_Y1_GPIO_Port, ES_Y1_Pin);
+  else if (GPIO_Pin == ES_Z1_Pin) pin_state = HAL_GPIO_ReadPin(ES_Z1_GPIO_Port, ES_Z1_Pin);
+  if (pin_state == GPIO_PIN_SET) { 
+      return; // EMI glitch
+  }
+
   uint32_t current_time = HAL_GetTick();
   static uint32_t last_time_x = 0;
   static uint32_t last_time_y = 0;
@@ -503,7 +513,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
   if(machine_state == HOMING) {
 
     if (GPIO_Pin == ES_X_Pin && x_homed == 0) {
-      if (current_time - last_time_x < 100) return;      
+
+      if (current_time - last_time_x < 100) return;   
+      last_time_x = current_time;
       x_homed = 1;
       // stop motors
       __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 0);
@@ -525,7 +537,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
     }
 
     if (GPIO_Pin == ES_Y1_Pin && y_homed == 0) {
+
       if (current_time - last_time_y < 100) return;
+      last_time_y = current_time;
       y_homed = 1;
       // stop motors
       __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 0);
@@ -560,7 +574,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
     }
 
     if (GPIO_Pin == ES_Z1_Pin) {
+
       if (current_time - last_time_z < 100) return;
+      last_time_z = current_time;
       z_homed = 1;
       __HAL_TIM_SET_COMPARE(&htim17, TIM_CHANNEL_1, 0);
 

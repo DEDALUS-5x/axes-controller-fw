@@ -178,9 +178,9 @@ int main(void)
   axis_X._enc_lin = &enc_lin_X;
   axis_X._pwm_register = &TIM1->CCR1;
   axis_X._enc_rot -> _offset = 0.0f;
-  axis_X._kickstart = 200.0f;
-  PID_init(&axis_X._pid_pos, 100.0f, 0.01f, 0.001f, 100.0f, 1000.0f); 
-  PID_init(&axis_X._pid_vel, 20.0f, 0.01f, 0.001f, 9000.0f, 1000.0f);
+  axis_X._kickstart = 400.0f;
+  PID_init(&axis_X._pid_pos, 100.0f, 0.01f, 0.001f, 120.0f, -1.0f); 
+  PID_init(&axis_X._pid_vel, 20.0f, 0.01f, 0.001f, 9000.0f, -1.0f);
   HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_ALL);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1); 
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
