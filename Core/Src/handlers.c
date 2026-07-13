@@ -60,11 +60,10 @@ void update_rotary_encoder(Encoder *enc, uint16_t raw_spi, float dt){
     raw_converted = (total_pos_deg - enc->_offset) / enc->g_ratio;
   
   } else{
-
     float relative = new_pos - enc -> _offset;
-    if(relative < 180.0f){
+    if(relative > 180.0f){
       relative -= 360.0f;
-    } else if(relative > 180.0f){
+    } else if(relative < -180.0f){
       relative += 360.0f;
     }
 

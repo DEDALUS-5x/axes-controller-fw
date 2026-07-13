@@ -258,7 +258,7 @@ int main(void)
     \____| /_/   \_\/_/\_\_|___/
                                 
   */
-  enc_rot_C._continuous = 1;
+  enc_rot_C._continuous = 0;
   axis_C._enc_rot = &enc_rot_C;
   axis_C._enc_rot -> _offset = 0.0f;
   axis_C.steps_per_unit = 8.888889f;
@@ -406,12 +406,12 @@ int main(void)
 
   machine_state = RUN;
 
-  axis_X._target_pos = -0.0f;
+  axis_X._target_pos = 0.0f;
   axis_X._target_vel = 0.0f;
-  axis_Y._target_pos = -0.0f;
+  axis_Y._target_pos = 0.0f;
   axis_Y._target_vel = 0.0f;
-  axis_A1._target = 2.0f;
-  axis_A2._target = 2.0f;
+  axis_A1._target = 0.0f;
+  axis_A2._target = 0.0f;
   axis_C._target = 10.0f;
   axis_Z1._target = 0.0f;
   axis_Z2._target = 0.0f;
