@@ -204,7 +204,7 @@ void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, G
     }
 
     float req_v = error * kp;
-    float max_accel = 30.0f; 
+    float max_accel = 25.0f; 
     float safe_v = sqrtf(2.0f * max_accel * fabsf(error));
 
     if (req_v > safe_v) req_v = safe_v;
@@ -221,7 +221,7 @@ void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, G
         stepper->_target_speed = req_v;
     }
 
-    float min_hz = 1.7f;
+    float min_hz = 2.0f;
     float current_hz = fabsf(stepper->_target_speed) * stepper->steps_per_unit;
     
     if (current_hz > 0.0f && current_hz < min_hz) {
