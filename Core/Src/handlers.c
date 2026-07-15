@@ -172,6 +172,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
               stepper_loop(&axis_A1, &htim15, TIM_CHANNEL_1, DIR_P1_GPIO_Port, DIR_P1_Pin, 20.0f, 1.1f,dt);              
               stepper_loop(&axis_A2, &htim16, TIM_CHANNEL_1, DIR_P2_GPIO_Port, DIR_P2_Pin, 20.0f, 1.1f, dt);
               stepper_loop(&axis_C, &htim8, TIM_CHANNEL_2, DIR_Y_GPIO_Port, DIR_Y_Pin, 15.0f, 1.0f, dt);
+
+              // stepper_command(mot_F._current_speed_hz, mot_F._steps_per_unit, &htim, TIM_CHANNEL_, DIR_F_GPIO_Port, DIR_F_Pin, 0);
           
           } else {
               axis_Z1._target = enc_rot_Z._converted_value;
@@ -464,7 +466,7 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
           axis_C._target = packet.c;
         }
       }
-      
+
     }
     // homing procedure
     if (packet.start == 0xCC) {
