@@ -24,6 +24,7 @@ static volatile uint8_t spi6_need_clear = 0;
 static uint8_t x_homed = 0;
 static uint8_t y_homed = 0;
 static uint8_t z_homed = 0;
+static uint8_t first_calib = 0;
 
 static uint8_t sleeping = 0;
 
@@ -269,6 +270,14 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
           memcpy(spi3_tx_buf_staging, &tx_packet, sizeof(SPITxPacket));
           __enable_irq();
 
+          // check for first calibration
+          if(first_calib && machine_state == RUN){
+            if(tx_packet.error < 5.0f){
+              machine_state = RUN;
+              first_calib = 0;
+            }
+          }
+
         }
 
         if(++led_counter >= 10000){
@@ -314,7 +323,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
         } else if(machine_state == RUN){
 
           // error if max limits are violeted
-          if (enc_rot_A._converted_value < -1.5f || enc_rot_A._converted_value > 91.5f) {
+          if (enc_rot_A._converted_value < -10.0f || enc_rot_A._converted_value > 91.5f) {
             __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 0);
             __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
             __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 0);
@@ -430,28 +439,30 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
 
       last_spi_msg = HAL_GetTick();
         
-      axis_X._target_pos = (axis_X._target_pos * 0.1f) + (packet.x * 0.9f);
-      axis_Y._target_pos = (axis_Y._target_pos * 0.1f) + (packet.y * 0.9f);
-      axis_Z1._target = packet.z;
-      axis_Z2._target = packet.z;
-      axis_X._target_vel = packet.vx;
-      axis_Y._target_vel = packet.vy;
+      if(first_calib == 0){
+        axis_X._target_pos = (axis_X._target_pos * 0.1f) + (packet.x * 0.9f);
+        axis_Y._target_pos = (axis_Y._target_pos * 0.1f) + (packet.y * 0.9f);
+        axis_Z1._target = packet.z;
+        axis_Z2._target = packet.z;
+        axis_X._target_vel = packet.vx;
+        axis_Y._target_vel = packet.vy;
 
-      // steppers positioning management
-      float safe_a = packet.a;
-      if (safe_a > 90.0f) safe_a = 90.0f;
-      if (safe_a < 0.0f)  safe_a = 0.0f;
-      if(fabsf(axis_A1._target - safe_a) > 0.05f){
-        axis_A1._in_position = 0;
-        axis_A1._target = safe_a;
-      }
-      if(fabsf(axis_A2._target - safe_a) > 0.05f){
-        axis_A2._in_position = 0;
-        axis_A2._target = safe_a;
-      }
-      if(fabsf(axis_C._target - packet.c) > 0.05f){
-        axis_C._in_position = 0;
-        axis_C._target = packet.c;
+        // steppers positioning management
+        float safe_a = packet.a;
+        if (safe_a > 90.0f) safe_a = 90.0f;
+        if (safe_a < 0.0f)  safe_a = 0.0f;
+        if(fabsf(axis_A1._target - safe_a) > 0.05f){
+          axis_A1._in_position = 0;
+          axis_A1._target = safe_a;
+        }
+        if(fabsf(axis_A2._target - safe_a) > 0.05f){
+          axis_A2._in_position = 0;
+          axis_A2._target = safe_a;
+        }
+        if(fabsf(axis_C._target - packet.c) > 0.05f){
+          axis_C._in_position = 0;
+          axis_C._target = packet.c;
+        }
       }
       
     }
@@ -514,6 +525,10 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
       return; 
   }
 
+  if(first_calib){ // This is for not triggering the INIT procedur while exiting the endstops
+    return;
+  }
+
   // noise filtering
   for(volatile int i = 0; i < 500; i++);
   GPIO_PinState pin_state;
@@ -566,6 +581,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 
       // ENDSTOP IN 0
       // offset rot encoder
+      /*
       enc_rot_Y._offset = (enc_rot_Y._turns * 360.0f) + enc_rot_Y._last_raw_pos;
       enc_rot_Y._turns = 0;
 
@@ -574,8 +590,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
       enc_rot_Y._converted_value = 0.0f;
       axis_Y._pid_pos._setpoint = 0.0f;
       axis_Y._pid_vel._setpoint = 0.0f;
+      */
 
-      /*
       // ENDSTOP IN 30cm
       enc_rot_Y._offset = (enc_rot_Y._turns * 360.0f) + enc_rot_Y._last_raw_pos;
       enc_rot_Y._turns = 0;
@@ -583,10 +599,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
       max_y = max_y * 100; 
       TIM5 -> CNT = max_y; // 30cm
       enc_lin_Y._converted_value = MAX_Y;
-      // enc_rot_X._converted_value = MAX_Y;
+      enc_rot_Y._converted_value = MAX_Y;
       axis_Y._pid_pos._setpoint = MAX_Y;
       axis_Y._pid_vel._setpoint = 0.0f;
-      */
 
       PID_reset(&(axis_Y._pid_pos));
       PID_reset(&(axis_Y._pid_vel));
@@ -610,12 +625,21 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
     }
 
     if(x_homed == 1 && y_homed == 1 && z_homed == 1) {
-      machine_state = RUN;
-      
+   
       // for the next homing
       x_homed = 0;
       y_homed = 0;
       z_homed = 0;
+
+      first_calib = 1;
+
+      // a little far from endstops:
+      axis_Z1._target = 20.0f;
+      axis_Z2._target = 20.0f;
+      axis_Y._target_pos = 50.0f;
+      axis_X._target_pos = 50.0f;
+
+      machine_state  = RUN;
     }
   
   } else if(machine_state == RUN) {
