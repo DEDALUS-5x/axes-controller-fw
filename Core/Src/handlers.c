@@ -313,6 +313,22 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
         } else if(machine_state == RUN){
 
+          // error if max limits are violeted
+          if (enc_rot_A._converted_value < -1.5f || enc_rot_A._converted_value > 91.5f) {
+            __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 0);
+            __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
+            __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 0);
+            __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_4, 0);
+            __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_4, 0);
+            __HAL_TIM_SET_COMPARE(&htim15, TIM_CHANNEL_1, 0);
+            __HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_2, 0);
+
+            HAL_GPIO_WritePin(EN_STEPPERS_GPIO_Port, EN_STEPPERS_Pin, GPIO_PIN_SET);
+
+            machine_state = INIT;
+            return;
+          }
+
           // continuity
           axis_X._target_pos += axis_X._target_vel * dt;
           axis_Y._target_pos += axis_Y._target_vel * dt;
@@ -422,13 +438,16 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
       axis_Y._target_vel = packet.vy;
 
       // steppers positioning management
-      if(fabsf(axis_A1._target - packet.a) > 0.05f){
+      float safe_a = packet.a;
+      if (safe_a > 90.0f) safe_a = 90.0f;
+      if (safe_a < 0.0f)  safe_a = 0.0f;
+      if(fabsf(axis_A1._target - safe_a) > 0.05f){
         axis_A1._in_position = 0;
-        axis_A1._target = packet.a;
+        axis_A1._target = safe_a;
       }
-      if(fabsf(axis_A2._target - packet.a) > 0.05f){
+      if(fabsf(axis_A2._target - safe_a) > 0.05f){
         axis_A2._in_position = 0;
-        axis_A2._target = packet.a;
+        axis_A2._target = safe_a;
       }
       if(fabsf(axis_C._target - packet.c) > 0.05f){
         axis_C._in_position = 0;
