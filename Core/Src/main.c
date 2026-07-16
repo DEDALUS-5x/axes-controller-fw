@@ -455,7 +455,7 @@ int main(void)
     __disable_irq();
     // uint16_t raw_y = spi2_rx_buf[0];
     float pos_y = axis_Y._enc_lin->_converted_value;
-    float pos_x = axis_X._enc_rot->_converted_value;
+    float pos_x = axis_X._enc_lin->_converted_value;
     float pos_a = enc_rot_A._converted_value;
     float psos_c = enc_rot_C._converted_value;
     __enable_irq();

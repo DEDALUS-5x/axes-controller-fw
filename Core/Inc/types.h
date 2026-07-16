@@ -85,7 +85,8 @@ typedef struct __attribute__((packed)){
     float vx;
     float vy;
     uint8_t check;
-    uint8_t padding[66];
+    float flow;
+    uint8_t padding[62];
 } SPIPacket;
 
 typedef struct __attribute__((packed)) {

@@ -291,7 +291,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
           // check for first calibration
           if(first_calib && machine_state == RUN){
             if(tx_packet.error < 5.0f){
-              machine_state = RUN;
               first_calib = 0;
             }
           }
@@ -481,6 +480,8 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
           axis_C._in_position = 0;
           axis_C._target = packet.c;
         }
+
+        mot_flow._current_speed_hz = packet.flow;
       }
 
     }
@@ -655,7 +656,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
       axis_Z1._target = 20.0f;
       axis_Z2._target = 20.0f;
       axis_Y._target_pos = 50.0f;
-      axis_X._target_pos = 50.0f;
+      axis_X._target_pos = 100.0f;
 
       machine_state  = RUN;
     }
