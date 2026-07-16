@@ -76,7 +76,7 @@ float current_values[3];
 uint8_t machine_state = INIT;
 Axis axis_X, axis_Y;
 Stepper axis_Z1, axis_Z2, axis_A1, axis_A2, axis_C, mot_flow;
-Encoder enc_rot_X, enc_rot_Y, enc_rot_Z, enc_rot_A, enc_rot_C, enc_rot_F;
+Encoder enc_rot_X, enc_rot_Y, enc_rot_Z, enc_rot_A, enc_rot_C;
 Encoder enc_lin_X, enc_lin_Y;
 TempState bed_state = STATE_OFF;
 uint32_t  bed_timer = 0;
@@ -164,7 +164,6 @@ int main(void)
   enc_rot_Z.g_ratio = 1.0f;
   enc_rot_A.g_ratio = 1.0f;
   enc_rot_C.g_ratio = 1.0f;
-  enc_rot_F.g_ratio = 1.0f;
 
   /*
    __  __             _     
@@ -274,7 +273,6 @@ int main(void)
   
   // open loop
   enc_rot_Z._converted_value = 0.0f; // homing needed
-  enc_rot_F._converted_value = 0.0f;
   
   uint16_t cmd_clear = 0x4001;
   uint16_t cmd_read  = 0xFFFF;
@@ -288,11 +286,11 @@ int main(void)
    |_|   |_|\___/ \_/\_/   |_|  |_|\___/ \__\___/|_|   
                                                        
   */
-  enc_rot_F._continuous = 1;
-  mot_flow._enc_rot = &enc_rot_F;
-  mot_flow._enc_rot->_offset = 0.0f;
+  mot_flow._enc_rot = NULL;
   mot_flow.steps_per_unit = 8.888889f;
   mot_flow._dir = 0;
+  mot_flow._current_speed_hz = 0.0f;
+  mot_flow._accumulator = 0.0f;
   // HAL_TIM_PWM_Start(htim) <----------------------------
 
   /*
@@ -430,11 +428,12 @@ int main(void)
   axis_X._target_vel = 0.0f;
   axis_Y._target_pos = 0.0f;
   axis_Y._target_vel = 0.0f;
-  axis_A1._target = 20.0f;
-  axis_A2._target = 20.0f;
-  axis_C._target = 10.0f;
+  axis_A1._target = 0.0f;
+  axis_A2._target = 0.0f;
+  axis_C._target = 0.0f;
   axis_Z1._target = 0.0f;
   axis_Z2._target = 0.0f;
+  mot_flow._current_speed_hz = 0.0f;
 
   // let's start b
   HAL_Delay(10);

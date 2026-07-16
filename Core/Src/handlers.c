@@ -173,7 +173,23 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
               stepper_loop(&axis_A2, &htim16, TIM_CHANNEL_1, DIR_P2_GPIO_Port, DIR_P2_Pin, 20.0f, 1.1f, dt);
               stepper_loop(&axis_C, &htim8, TIM_CHANNEL_2, DIR_Y_GPIO_Port, DIR_Y_Pin, 15.0f, 1.0f, dt);
 
-              // stepper_command(mot_F._current_speed_hz, mot_F._steps_per_unit, &htim, TIM_CHANNEL_, DIR_F_GPIO_Port, DIR_F_Pin, 0);
+              // manual open loop for flow stepper
+              HAL_GPIO_WritePin(STEP_F_GPIO_Port, STEP_F_Pin, GPIO_PIN_RESET);
+              if(mot_flow._current_speed_hz < 0.0f){
+                HAL_GPIO_WritePin(DIR_F_GPIO_Port, DIR_F_Pin, GPIO_PIN_RESET);
+              } else{
+                HAL_GPIO_WritePin(DIR_F_GPIO_Port, DIR_F_Pin, GPIO_PIN_SET);
+              }
+              float freq_tmp = fabsf(mot_flow._current_speed_hz) * mot_flow.steps_per_unit;
+              if(freq_tmp > 0.5f){
+                mot_flow._accumulator += freq_tmp;
+                if(mot_flow._accumulator >= 10000.0f){
+                  mot_flow._accumulator -= 10000.0f;
+                  HAL_GPIO_WritePin(STEP_F_GPIO_Port, STEP_F_Pin, GPIO_PIN_SET);
+                }
+              }
+
+              // stepper_command(mot_flow._current_speed_hz, mot_flow._steps_per_unit, &htim, TIM_CHANNEL_, DIR_F_GPIO_Port, DIR_F_Pin, 0);
           
           } else {
               axis_Z1._target = enc_rot_Z._converted_value;
@@ -325,7 +341,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
         } else if(machine_state == RUN){
 
           // error if max limits are violeted
-          if (enc_rot_A._converted_value < -10.0f || enc_rot_A._converted_value > 91.5f) {
+          if (enc_rot_A._converted_value < -15.0f || enc_rot_A._converted_value > 91.5f) {
             __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 0);
             __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
             __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 0);

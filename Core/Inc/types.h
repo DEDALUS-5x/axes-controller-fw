@@ -68,6 +68,7 @@ typedef struct {
     float _last_error;
     uint8_t _dir;
     uint8_t _in_position;
+    float _accumulator;
 
 } Stepper;
 
