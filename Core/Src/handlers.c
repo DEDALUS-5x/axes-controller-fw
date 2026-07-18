@@ -88,6 +88,15 @@ void sleep_motors(void) {
   }
 }
 
+void update_pids(SPIPacket pkt, Axis *ax){
+
+  ax -> _pid_pos._kp = pkt.x;
+  ax -> _pid_vel._kp = pkt.y;
+  ax -> _pid_vel._ki = pkt.z;
+  ax -> _pid_vel._kd = pkt.a;
+  ax -> _ka = pkt.c;
+}
+
 /*
   ____            _   _____ _                
  |  _ \ ___  __ _| | |_   _(_)_ __ ___   ___ 
@@ -513,6 +522,14 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
       // motors command already embedded in tim6 handler. just keep a constnat pid output (pid disabled)
     }
 
+    if(packet.start == 0xDD){
+      update_pids(packet, &axis_X);
+    }
+
+    if(packet.start == 0xEE){
+      update_pids(packet, &axis_Y);
+    }
+
     memcpy(spi3_tx_buf_active, spi3_tx_buf_staging, sizeof(SPITxPacket));
     SCB_CleanDCache_by_Addr((uint32_t *)spi3_tx_buf_active, sizeof(SPITxPacket));
     // clena errors and restart DMA
@@ -597,19 +614,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
       // stop motors
       __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 0);
       __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_4, 0);
-
-      // ENDSTOP IN 0
-      // offset rot encoder
-      /*
-      enc_rot_Y._offset = (enc_rot_Y._turns * 360.0f) + enc_rot_Y._last_raw_pos;
-      enc_rot_Y._turns = 0;
-
-      TIM5 -> CNT = 0;
-      enc_lin_Y._converted_value = 0.0f;
-      enc_rot_Y._converted_value = 0.0f;
-      axis_Y._pid_pos._setpoint = 0.0f;
-      axis_Y._pid_vel._setpoint = 0.0f;
-      */
 
       // ENDSTOP IN 30cm
       enc_rot_Y._offset = (enc_rot_Y._turns * 360.0f) + enc_rot_Y._last_raw_pos;

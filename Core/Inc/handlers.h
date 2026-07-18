@@ -93,6 +93,8 @@ void update_rotary_encoder(Encoder *enc, uint16_t raw_spi, float dt);
  */
 void sleep_motors(void);
 
+void update_pids(SPIPacket pkt, Axis *ax);
+
 /**
  * 
  * @brief Handler of the real-time timer. It is called as interrupt handler of the same timer and it runs the board operations at the timer frequency
