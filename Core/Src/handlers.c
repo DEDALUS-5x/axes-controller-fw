@@ -217,7 +217,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
               axis_C._current_speed_hz = 0.0f;
           }
 
-        if(++pid_counter >= 10){
+        if(++pid_counter >= 5){
 
           /*
             _ _  ___         
