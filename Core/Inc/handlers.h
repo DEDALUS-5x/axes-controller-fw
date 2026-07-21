@@ -28,6 +28,7 @@
 #define HOMING 1
 #define RUN 2
 #define ERROR 3
+#define TUNING 4
 
 /*
 MACHINE STATE

@@ -180,9 +180,9 @@ int main(void)
   axis_X._kickstart = 800.0f;
   // PID_init(&axis_X._pid_pos, 100.0f, 0.01f, 0.001f, 150.0f, -1.0f); 
   // PID_init(&axis_X._pid_vel, 20.0f, 0.01f, 0.001f, 9000.0f, -1.0f);
-  PID_init(&axis_X._pid_pos, 100.0f, 0.01f, 0.001f, 100.0f, -1.0f); // 300mm/min -> 5mm/s
-  PID_init(&axis_X._pid_vel, 18.0f, 0.01f, 0.01f, 8000.0f, -1.0f);
-  axis_X._ka = 0.01f;
+  PID_init(&axis_X._pid_pos, 110.287f, 0.01f, 0.001f, 100.0f, -1.0f); // 300mm/min -> 5mm/s
+  PID_init(&axis_X._pid_vel, 18, 0.227864f, 0.00303719f, 8000.0f, -1.0f);
+  axis_X._ka = 0.00338426f;
   HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_ALL);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1); 
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
@@ -200,10 +200,10 @@ int main(void)
   axis_Y._pwm_register = &TIM1->CCR3;
   axis_Y._enc_rot -> _offset = 0.0f;
   axis_Y._kickstart = 600.0f;
-  PID_init(&axis_Y._pid_pos, 50.0f, 0.01f, 0.001f, 120.0f, 1000.0f);
+  PID_init(&axis_Y._pid_pos, 41.6177f, 0.01f, 0.001f, 120.0f, 1000.0f);
   // PID_init(&axis_Y._pid_vel, 366.4f, 0.0916f, 0.000916f, 3000.0f);
-  PID_init(&axis_Y._pid_vel, 10.0f, 0.01f, 0.001f, 10000.0f, 1000.0f);
-  axis_Y._ka = 0.01f;
+  PID_init(&axis_Y._pid_vel, 8.42585f, 0.0f, 0.0f, 10000.0f, 1000.0f);
+  axis_Y._ka = 0.0f;
   HAL_TIM_Encoder_Start(&htim5, TIM_CHANNEL_ALL);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);

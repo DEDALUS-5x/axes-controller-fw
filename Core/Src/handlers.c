@@ -178,9 +178,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
               stepper_command(axis_Z1._current_speed_hz, axis_Z2.steps_per_unit, &htim3, TIM_CHANNEL_2, DIR_Z2_GPIO_Port, DIR_Z2_Pin, 0);  // master-slave
               enc_rot_Z._converted_value += (axis_Z1._current_speed_hz * dt);
               
-              stepper_loop(&axis_A1, &htim15, TIM_CHANNEL_1, DIR_P1_GPIO_Port, DIR_P1_Pin, 15.0f, 1.1f,dt);              
-              stepper_loop(&axis_A2, &htim16, TIM_CHANNEL_1, DIR_P2_GPIO_Port, DIR_P2_Pin, 15.0f, 1.1f, dt);
-              stepper_loop(&axis_C, &htim8, TIM_CHANNEL_2, DIR_Y_GPIO_Port, DIR_Y_Pin, 10.0f, 1.0f, dt);
+              stepper_loop(&axis_A1, &htim15, TIM_CHANNEL_1, DIR_P1_GPIO_Port, DIR_P1_Pin, 15.0f, 0.5f,dt);              
+              stepper_loop(&axis_A2, &htim16, TIM_CHANNEL_1, DIR_P2_GPIO_Port, DIR_P2_Pin, 15.0f, 0.5f, dt);
+              stepper_loop(&axis_C, &htim8, TIM_CHANNEL_2, DIR_Y_GPIO_Port, DIR_Y_Pin, 10.0f, 0.5f, dt);
 
               // manual open loop for flow stepper
               HAL_GPIO_WritePin(STEP_F_GPIO_Port, STEP_F_Pin, GPIO_PIN_RESET);
@@ -371,7 +371,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
           PID_compute_vel(&axis_Y, dt);
           motor_command(&axis_X, &htim1, TIM_CHANNEL_1, TIM_CHANNEL_2);
           motor_command(&axis_Y, &htim1, TIM_CHANNEL_3, TIM_CHANNEL_4);
-          
+
+        } else if(machine_state == TUNING){ // skip PID
+          motor_command(&axis_X, &htim1, TIM_CHANNEL_1, TIM_CHANNEL_2);
+          motor_command(&axis_Y, &htim1, TIM_CHANNEL_3, TIM_CHANNEL_4);
+        
         } else{
 
           __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 0);
@@ -379,8 +383,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
           __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 0);
           __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_4, 0);
         }
-        
-
     }
 }
 
@@ -524,10 +526,27 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
 
     if(packet.start == 0xDD){
       update_pids(packet, &axis_X);
+      HAL_GPIO_TogglePin(LED_2_GPIO_Port, LED_2_Pin);
+      axis_X._pid_vel._output = 0.0f;
+      axis_Y._pid_vel._output = 0.0f;
     }
 
     if(packet.start == 0xEE){
       update_pids(packet, &axis_Y);
+      HAL_GPIO_TogglePin(LED_2_GPIO_Port, LED_2_Pin);
+      axis_X._pid_vel._output = 0.0f;
+      axis_Y._pid_vel._output = 0.0f;
+    }
+
+    if(packet.start == 0xFF){
+      machine_state = TUNING;
+      axis_X._pid_vel._output = packet.vx;
+      axis_Y._pid_vel._output = packet.vy;
+      axis_Z1._target = 0.0f;
+      axis_Z2._target = 0.0f;
+      axis_A1._target = 0.0f;
+      axis_A2._target = 0.0f;
+      axis_C._target = 0.0f;
     }
 
     memcpy(spi3_tx_buf_active, spi3_tx_buf_staging, sizeof(SPITxPacket));
@@ -536,7 +555,7 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
     __HAL_SPI_CLEAR_OVRFLAG(&hspi3); 
     __HAL_SPI_CLEAR_FREFLAG(&hspi3);
     
-    if (packet.start == 0xAA || packet.start == 0xCC) {
+    if (packet.start == 0xAA || packet.start == 0xCC || packet.start == 0xDD || packet.start == 0xEE || packet.start == 0xFF) {
       HAL_SPI_TransmitReceive_DMA(&hspi3, spi3_tx_buf_active, spi3_rx_buf, sizeof(SPIPacket));
     } else{
       HAL_SPI_DMAStop(&hspi3); // noise, restart it at 1s period
