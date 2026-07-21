@@ -180,7 +180,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
               
               stepper_loop(&axis_A1, &htim15, TIM_CHANNEL_1, DIR_P1_GPIO_Port, DIR_P1_Pin, 15.0f, 0.5f,dt);              
               stepper_loop(&axis_A2, &htim16, TIM_CHANNEL_1, DIR_P2_GPIO_Port, DIR_P2_Pin, 15.0f, 0.5f, dt);
-              stepper_loop(&axis_C, &htim8, TIM_CHANNEL_2, DIR_Y_GPIO_Port, DIR_Y_Pin, 10.0f, 0.5f, dt);
+              stepper_loop(&axis_C, &htim8, TIM_CHANNEL_2, DIR_Y_GPIO_Port, DIR_Y_Pin, 12.0f, 0.5f, dt);
 
               // manual open loop for flow stepper
               HAL_GPIO_WritePin(STEP_F_GPIO_Port, STEP_F_Pin, GPIO_PIN_RESET);
@@ -339,7 +339,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
           motor_command(&axis_Y, &htim1, TIM_CHANNEL_3, TIM_CHANNEL_4);
 
           if(z_homed == 0){
-            axis_Z1._current_speed_hz = -1.0f;
+            axis_Z1._current_speed_hz = -100.0f;
           } else{
             axis_Z1._current_speed_hz = 0.0f;
           }
@@ -676,8 +676,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
       first_calib = 1;
 
       // a little far from endstops:
-      axis_Z1._target = 20.0f;
-      axis_Z2._target = 20.0f;
+      axis_Z1._target = 50.0f;
+      axis_Z2._target = 50.0f;
       axis_Y._target_pos = 50.0f;
       axis_X._target_pos = 100.0f;
 
