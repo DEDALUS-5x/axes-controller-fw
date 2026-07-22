@@ -171,30 +171,28 @@ void stepper_command(float speed,  float steps_per_unit, TIM_HandleTypeDef *htim
 }
 
 
-void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, GPIO_TypeDef *dir_port, uint16_t dir_pin, float max_speed, float kp, float dt) {
+void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, GPIO_TypeDef *dir_port, uint16_t dir_pin, float max_speed, float kp, float kd, float dt) {
 
     float raw_error = stepper -> _target - stepper -> _enc_rot -> _converted_value;
-    
-    float alpha_err = 0.1f; 
+        float alpha_err = 0.1f; 
     float error = (stepper -> _last_error * (1.0f - alpha_err)) + (raw_error * alpha_err);
     stepper -> _last_error = error;
 
     float step_deg = 1.0f / stepper -> steps_per_unit; 
     float encoder_noise_floor = 0.15f;
-
-    // noise on the encoder is about 0.05 deg, so we add it to the tolerance
     float inner_tol = (step_deg * 0.6f) + (encoder_noise_floor * 0.5f); 
     float outer_tol = (step_deg * 1.5f) + encoder_noise_floor; 
 
     if (stepper -> _in_position == 1) {
         if (fabsf(error) > outer_tol) {
-            stepper -> _in_position = 0; 
+            stepper -> _in_position = 0;
         } else {
             stepper_command(0.0f, stepper -> steps_per_unit, htim, channel, dir_port, dir_pin, stepper -> _dir);
             return;
         }
     } else {
-        if (fabsf(error) < inner_tol) {
+
+        if (fabsf(error) < inner_tol && fabsf(stepper->_enc_rot->_velocity) < 1.0f) {
             stepper_command(0.0f, stepper -> steps_per_unit, htim, channel, dir_port, dir_pin, stepper -> _dir);
             stepper -> _current_speed_hz = 0.0f;
             stepper -> _target_speed = 0.0f;
@@ -203,37 +201,27 @@ void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, G
         }
     }
 
-    float req_v = error * kp;
-    float max_accel = 40.0f; 
-    float safe_v = sqrtf(2.0f * max_accel * fabsf(error));
-
-    if (req_v > safe_v) req_v = safe_v;
-    if (req_v < -safe_v) req_v = -safe_v;
+    float derivative = -stepper->_enc_rot->_velocity; 
+    float req_v = (error * kp) + (derivative * kd);
+    float braking_accel = 30.0f;
+    float safe_approach_speed = sqrtf(2.0f * braking_accel * fabsf(error));
+    if (req_v > safe_approach_speed) req_v = safe_approach_speed;
+    if (req_v < -safe_approach_speed) req_v = -safe_approach_speed;
     if (req_v > max_speed) req_v = max_speed;
     if (req_v < -max_speed) req_v = -max_speed;
     
-    float max_vel = max_accel * dt;
-    if (req_v > stepper -> _target_speed + max_vel) {
-        stepper -> _target_speed += max_vel;
-    } else if (req_v < stepper -> _target_speed - max_vel) {
-        stepper -> _target_speed -= max_vel;
+    float max_accel = 40.0f; 
+    float max_delta_v = max_accel * dt;
+
+    if (req_v > stepper -> _target_speed + max_delta_v) {
+        stepper -> _target_speed += max_delta_v;
+    } else if (req_v < stepper -> _target_speed - max_delta_v) {
+        stepper -> _target_speed -= max_delta_v;
     } else {
         stepper -> _target_speed = req_v;
     }
 
-    float min_hz = 2.0f;
-    float current_hz = fabsf(stepper -> _target_speed) * stepper -> steps_per_unit;
-    
-    if (current_hz > 0.0f && current_hz < min_hz) {
-        if (error > 0.0f) {
-            stepper -> _target_speed = min_hz / stepper -> steps_per_unit;
-        } else {
-            stepper -> _target_speed = -min_hz / stepper -> steps_per_unit;
-        }
-    }
-
     stepper -> _current_speed_hz = stepper -> _target_speed;
-
     stepper_command(stepper -> _target_speed, stepper -> steps_per_unit, htim, channel, dir_port, dir_pin, stepper -> _dir);
 }
 

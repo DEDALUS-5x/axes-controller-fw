@@ -109,7 +109,7 @@ void stepper_command(float speed, float steps_per_unit, TIM_HandleTypeDef *htim,
  * @param kp Proportional gain
  * @param dt time interval
  */
-void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, GPIO_TypeDef *dir_port, uint16_t dir_pin, float max_speed, float kp, float dt);
+void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, GPIO_TypeDef *dir_port, uint16_t dir_pin, float max_speed, float kp, float kd, float dt);
 
 void heat_command(GPIO_TypeDef *drive_port, uint16_t drive_pin, GPIO_TypeDef *ntc_port, uint16_t ntc_pin, float temp);
 
