@@ -31,7 +31,7 @@
 #include "types.h"
 #include "ctrl.h"
 #include "handlers.h"
-#include <stdio.h>
+// #include <stdio.h>
 
 /* USER CODE END Includes */
 
@@ -223,6 +223,7 @@ int main(void)
   axis_Z1._target = 0.0f;
   axis_Z1.steps_per_unit = 400.0f;
   HAL_TIM_PWM_Start(&htim17, TIM_CHANNEL_1); 
+  axis_Z1._in_position = 0;
 
   axis_Z2._enc_rot = &enc_rot_Z;
   axis_Z2._enc_rot -> _offset = 0.0f;
@@ -230,6 +231,7 @@ int main(void)
   axis_Z2._target = 0.0f;
   axis_Z2.steps_per_unit = 400.0f;
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
+  axis_Z2._in_position = 0;
 
   /*
        _         _          _     
@@ -425,14 +427,14 @@ int main(void)
   HAL_GPIO_TogglePin(LED_1_GPIO_Port, LED_1_Pin);
   HAL_Delay(500);
 
-  machine_state = INIT;
+  machine_state = RUN;
 
   axis_X._target_pos = 0.0f;
   axis_X._target_vel = 0.0f;
   axis_Y._target_pos = 0.0f;
   axis_Y._target_vel = 0.0f;
-  axis_A1._target = 0.0f;
-  axis_A2._target = 0.0f;
+  axis_A1._target = 1.0f;
+  axis_A2._target = 1.0f;
   axis_C._target = 0.0f;
   axis_Z1._target = 0.0f;
   axis_Z2._target = 0.0f;
@@ -454,7 +456,7 @@ int main(void)
     /* USER CODE BEGIN 3 */
 
     // DEBUG prints
-
+/*
     __disable_irq();
     // uint16_t raw_y = spi2_rx_buf[0];
     float pos_y = axis_Y._enc_lin->_converted_value;
@@ -470,6 +472,7 @@ int main(void)
     
     HAL_UART_Transmit(&huart1, (uint8_t*)serial_buf, strlen(serial_buf), 10);
     HAL_Delay(100);
+    */
 
   }
   /* USER CODE END 3 */

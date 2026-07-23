@@ -82,7 +82,7 @@ void update_rotary_encoder(Encoder *enc, uint16_t raw_spi, float dt){
 }
 
 void sleep_motors(void) {
-  if(HAL_GetTick() - last_spi_msg > MOT_SLEEP_TIMEOUT) {
+  if(HAL_GetTick() - last_spi_msg > MOT_SLEEP_TIMEOUT && machine_state != HOMING && !first_calib) {
     HAL_GPIO_WritePin(EN_STEPPERS_GPIO_Port, EN_STEPPERS_Pin, GPIO_PIN_SET);
     sleeping = 1;
   }
@@ -178,8 +178,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
               stepper_command(axis_Z1._current_speed_hz, axis_Z2.steps_per_unit, &htim3, TIM_CHANNEL_2, DIR_Z2_GPIO_Port, DIR_Z2_Pin, 0);  // master-slave
               enc_rot_Z._converted_value += (axis_Z1._current_speed_hz * dt);
               
-              stepper_loop(&axis_A1, &htim15, TIM_CHANNEL_1, DIR_P1_GPIO_Port, DIR_P1_Pin, 15.0f, 0.5f, 0.01f,dt);              
-              stepper_loop(&axis_A2, &htim16, TIM_CHANNEL_1, DIR_P2_GPIO_Port, DIR_P2_Pin, 15.0f, 0.5f, 0.01f, dt);
+              stepper_loop(&axis_A1, &htim15, TIM_CHANNEL_1, DIR_P1_GPIO_Port, DIR_P1_Pin, 15.0f, 0.5f, 0.05f,dt);              
+              stepper_loop(&axis_A2, &htim16, TIM_CHANNEL_1, DIR_P2_GPIO_Port, DIR_P2_Pin, 15.0f, 0.5f, 0.05f, dt);
               // stepper_command(axis_A2._current_speed_hz, axis_A2.steps_per_unit, &htim16, TIM_CHANNEL_1, DIR_P2_GPIO_Port, DIR_P2_Pin, axis_A2._dir);
 
               stepper_loop(&axis_C, &htim8, TIM_CHANNEL_2, DIR_Y_GPIO_Port, DIR_Y_Pin, 15.0f, 0.5f, 0.05f,  dt);
@@ -303,6 +303,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
           if(first_calib && machine_state == RUN){
             if(tx_packet.error < 5.0f){
               first_calib = 0;
+              last_spi_msg = HAL_GetTick(); // start the sleep contdown here
             }
           }
 
@@ -341,14 +342,14 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
           motor_command(&axis_Y, &htim1, TIM_CHANNEL_3, TIM_CHANNEL_4);
 
           if(z_homed == 0){
-            axis_Z1._current_speed_hz = -100.0f;
+            axis_Z1._current_speed_hz = -2.0f;
           } else{
             axis_Z1._current_speed_hz = 0.0f;
           }
           stepper_command(axis_Z1._current_speed_hz, axis_Z1.steps_per_unit, &htim17, TIM_CHANNEL_1, DIR_Z1_GPIO_Port, DIR_Z1_Pin, 0);  // master-slave
           stepper_command(axis_Z1._current_speed_hz, axis_Z2.steps_per_unit, &htim3, TIM_CHANNEL_2, DIR_Z2_GPIO_Port, DIR_Z2_Pin, 0);  // master-slave
 
-        } else if(machine_state == RUN){
+        } else if(machine_state == RUN ){
 
           // error if max limits are violeted
           if (enc_rot_A._converted_value < -15.0f || enc_rot_A._converted_value > 91.5f) {
@@ -509,7 +510,7 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
       machine_state = HOMING;
       axis_X._pid_vel._output = -1.0f;
       axis_Y._pid_vel._output = -1.0f;
-      axis_Z1._target = 0.0f;
+      axis_Z1._current_speed_hz = -2.0f;
       axis_Z2._target = 0.0f;
       axis_A1._target = 0.0f;
       axis_A2._target = 0.0f;
@@ -684,6 +685,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
       axis_X._target_pos = 100.0f;
 
       machine_state  = RUN;
+
     }
   
   } else if(machine_state == RUN) {

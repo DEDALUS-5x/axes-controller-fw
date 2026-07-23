@@ -203,12 +203,12 @@ void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, G
 
     float derivative = -stepper->_enc_rot->_velocity; 
     float req_v = (error * kp) + (derivative * kd);
-    float braking_accel = 30.0f;
-    float safe_approach_speed = sqrtf(2.0f * braking_accel * fabsf(error));
-    if (req_v > safe_approach_speed) req_v = safe_approach_speed;
-    if (req_v < -safe_approach_speed) req_v = -safe_approach_speed;
-    if (req_v > max_speed) req_v = max_speed;
-    if (req_v < -max_speed) req_v = -max_speed;
+    // float braking_accel = 50.0f;
+    // float safe_approach_speed = sqrtf(2.0f * braking_accel * fabsf(error));
+    // if (req_v > safe_approach_speed) req_v = safe_approach_speed;
+    // if (req_v < -safe_approach_speed) req_v = -safe_approach_speed;
+    // if (req_v > max_speed) req_v = max_speed;
+    // if (req_v < -max_speed) req_v = -max_speed;
     
     float max_accel = 40.0f; 
     float max_delta_v = max_accel * dt;
