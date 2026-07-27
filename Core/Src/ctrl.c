@@ -129,7 +129,7 @@ void stepper_command(float speed,  float steps_per_unit, TIM_HandleTypeDef *htim
     }
 
     float freq = fabsf(speed) * steps_per_unit;
-    if (freq < 1.6f) {
+    if (freq < 0.5f) {
         __HAL_TIM_SET_COMPARE(htim, channel, 0); 
         return;
     }
@@ -174,12 +174,13 @@ void stepper_command(float speed,  float steps_per_unit, TIM_HandleTypeDef *htim
 void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, GPIO_TypeDef *dir_port, uint16_t dir_pin, float max_speed, float kp, float kd, float dt) {
 
     float raw_error = stepper -> _target - stepper -> _enc_rot -> _converted_value;
-        float alpha_err = 0.1f; 
+    float alpha_err = 0.1f; 
     float error = (stepper -> _last_error * (1.0f - alpha_err)) + (raw_error * alpha_err);
     stepper -> _last_error = error;
 
     float step_deg = 1.0f / stepper -> steps_per_unit; 
-    float encoder_noise_floor = 0.15f;
+    float encoder_noise_floor = 0.1f; 
+
     float inner_tol = (step_deg * 0.6f) + (encoder_noise_floor * 0.5f); 
     float outer_tol = (step_deg * 1.5f) + encoder_noise_floor; 
 
@@ -210,7 +211,7 @@ void stepper_loop(Stepper *stepper, TIM_HandleTypeDef *htim, uint32_t channel, G
     // if (req_v > max_speed) req_v = max_speed;
     // if (req_v < -max_speed) req_v = -max_speed;
     
-    float max_accel = 40.0f; 
+    float max_accel = 50.0f; 
     float max_delta_v = max_accel * dt;
 
     if (req_v > stepper -> _target_speed + max_delta_v) {

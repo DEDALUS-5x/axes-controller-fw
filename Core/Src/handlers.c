@@ -72,12 +72,12 @@ void update_rotary_encoder(Encoder *enc, uint16_t raw_spi, float dt){
   }
 
   enc->_last_raw_pos = new_pos;
-  enc->_converted_value = (enc->_converted_value * 0.5f) + (raw_converted * 0.5f);
+  enc->_converted_value = (enc->_converted_value * 0.85f) + (raw_converted * 0.15f);
 
   float instant_vel = diff / dt;  
-  enc -> _velocity = (enc->_velocity * 0.9) + (instant_vel * 0.1f);
+  enc -> _velocity = (enc->_velocity * 0.98) + (instant_vel * 0.02f);
   enc -> _last_converted_value = enc->_converted_value;
-  enc -> _acceleration = enc -> _acceleration * 0.95f + ((enc -> _velocity - enc -> _last_velocity) / dt) * 0.05f;
+  enc -> _acceleration = enc -> _acceleration * 0.995f + ((enc -> _velocity - enc -> _last_velocity) / dt) * 0.005f;
   enc -> _last_velocity = enc -> _velocity;
 }
 
@@ -174,15 +174,15 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
         if (machine_state == HOMING || machine_state == RUN) {
               // stepper_loop(&axis_Z1, &htim17, TIM_CHANNEL_1, DIR_Z1_GPIO_Port, DIR_Z1_Pin, 20.0f, 2.0f, 0.01f, dt);
-              stepper_loop(&axis_Z1, &htim17, TIM_CHANNEL_1, DIR_Z1_GPIO_Port, DIR_Z1_Pin, 3.0f, 1.0f, 0.0f, dt);
+              stepper_loop(&axis_Z1, &htim17, TIM_CHANNEL_1, DIR_Z1_GPIO_Port, DIR_Z1_Pin, 20.0f, 2.0f, 0.01f, dt);
               stepper_command(axis_Z1._current_speed_hz, axis_Z2.steps_per_unit, &htim3, TIM_CHANNEL_2, DIR_Z2_GPIO_Port, DIR_Z2_Pin, 0);  // master-slave
               enc_rot_Z._converted_value += (axis_Z1._current_speed_hz * dt);
               
-              stepper_loop(&axis_A1, &htim15, TIM_CHANNEL_1, DIR_P1_GPIO_Port, DIR_P1_Pin, 15.0f, 0.5f, 0.05f,dt);              
-              stepper_loop(&axis_A2, &htim16, TIM_CHANNEL_1, DIR_P2_GPIO_Port, DIR_P2_Pin, 15.0f, 0.5f, 0.05f, dt);
+              stepper_loop(&axis_A1, &htim15, TIM_CHANNEL_1, DIR_P1_GPIO_Port, DIR_P1_Pin, 20.0f, 2.0f, 0.2f,dt);              
+              stepper_loop(&axis_A2, &htim16, TIM_CHANNEL_1, DIR_P2_GPIO_Port, DIR_P2_Pin, 20.0f, 2.0f, 0.2f, dt);
               // stepper_command(axis_A2._current_speed_hz, axis_A2.steps_per_unit, &htim16, TIM_CHANNEL_1, DIR_P2_GPIO_Port, DIR_P2_Pin, axis_A2._dir);
 
-              stepper_loop(&axis_C, &htim8, TIM_CHANNEL_2, DIR_Y_GPIO_Port, DIR_Y_Pin, 15.0f, 0.5f, 0.05f,  dt);
+              stepper_loop(&axis_C, &htim8, TIM_CHANNEL_2, DIR_Y_GPIO_Port, DIR_Y_Pin, 20.0f, 1.5f, 0.5f,  dt);
 
               // manual open loop for flow stepper
               HAL_GPIO_WritePin(STEP_F_GPIO_Port, STEP_F_Pin, GPIO_PIN_RESET);
@@ -347,7 +347,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
             axis_Z1._current_speed_hz = 0.0f;
           }
           stepper_command(axis_Z1._current_speed_hz, axis_Z1.steps_per_unit, &htim17, TIM_CHANNEL_1, DIR_Z1_GPIO_Port, DIR_Z1_Pin, 0);  // master-slave
-          stepper_command(axis_Z1._current_speed_hz, axis_Z2.steps_per_unit, &htim3, TIM_CHANNEL_2, DIR_Z2_GPIO_Port, DIR_Z2_Pin, 0);  // master-slave
+          stepper_command(axis_Z2._current_speed_hz, axis_Z2.steps_per_unit, &htim3, TIM_CHANNEL_2, DIR_Z2_GPIO_Port, DIR_Z2_Pin, 0);  // master-slave
 
         } else if(machine_state == RUN ){
 
@@ -511,6 +511,7 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
       axis_X._pid_vel._output = -1.0f;
       axis_Y._pid_vel._output = -1.0f;
       axis_Z1._current_speed_hz = -2.0f;
+      axis_Z2._current_speed_hz = -2.0f;
       axis_Z2._target = 0.0f;
       axis_A1._target = 0.0f;
       axis_A2._target = 0.0f;
@@ -702,6 +703,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
     // disable steppers
     HAL_GPIO_WritePin(EN_STEPPERS_GPIO_Port, EN_STEPPERS_Pin, GPIO_PIN_SET);
 
-    machine_state = INIT;
+    machine_state = RUN;
   }
 }
