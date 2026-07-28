@@ -23,6 +23,7 @@
 #define OUT_PERIOD 0.0005f // 1kHz Period
 #define MAX_Y 150.0f;
 #define MOT_SLEEP_TIMEOUT 20000 // 10 seconds
+#define MAX_FOLLOWING_ERROR 3.0f
 
 #define INIT 0
 #define HOMING 1
@@ -95,6 +96,12 @@ void update_rotary_encoder(Encoder *enc, uint16_t raw_spi, float dt);
 void sleep_motors(void);
 
 void update_pids(SPIPacket pkt, Axis *ax);
+
+/**
+ * @brief Function that check if physical limits are violated
+ * @return uint8_t: 0 if OK, 1 for error
+ */
+uint8_t check_hard_limits(void);
 
 /**
  * 

@@ -97,6 +97,31 @@ void update_pids(SPIPacket pkt, Axis *ax){
   ax -> _ka = pkt.c;
 }
 
+uint8_t check_hard_limits(void){
+
+  // error if max limits are violeted
+  float error_x = fabsf(axis_X._target_pos - enc_lin_X._converted_value);
+  float error_y = fabsf(axis_Y._target_pos - enc_lin_Y._converted_value);
+  if (enc_rot_A._converted_value < -15.0f || enc_rot_A._converted_value > 91.5f || error_x > MAX_FOLLOWING_ERROR || error_y > MAX_FOLLOWING_ERROR) {
+    __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 0);
+    __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
+    __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 0);
+    __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_4, 0);
+    __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_4, 0);
+    __HAL_TIM_SET_COMPARE(&htim15, TIM_CHANNEL_1, 0);
+    __HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_2, 0);
+
+    HAL_GPIO_WritePin(EN_STEPPERS_GPIO_Port, EN_STEPPERS_Pin, GPIO_PIN_SET);
+
+    machine_state = INIT;
+    return 1;
+
+  } else{
+
+    return 0;
+  }
+}
+
 /*
   ____            _   _____ _                
  |  _ \ ___  __ _| | |_   _(_)_ __ ___   ___ 
@@ -222,12 +247,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
         if(++pid_counter >= 5){
 
           /*
-            _ _  ___         
-           / | |/ / |__  ____
-           | | ' /| '_ \|_  /
-           | | . \| | | |/ / 
-           |_|_|\_\_| |_/___|
-                             
+            ____  _    _   _                                  
+           |___ \| | _| | | |____                             
+             __) | |/ / |_| |_  /                             
+            / __/|   <|  _  |/ /                              
+           |_____|_|\_\_| |_/___|                             
+                                                              
           */
 
           pid_counter = 0;
@@ -263,7 +288,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
           static uint32_t current_msg_id = 0;
           SPITxPacket tx_packet;
           
-          // FEEDBACK SPI PACKET
+          // FEEDBACK SPI PACKET staging
           tx_packet.start = 0xBB;
           tx_packet.msg_id = current_msg_id++;
           tx_packet.x = enc_lin_X._converted_value;
@@ -281,7 +306,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
           tx_packet.az = 0.0f; // enc_rot_Z._acceleration;
           tx_packet.aa = enc_rot_A._acceleration;
           tx_packet.ac = enc_rot_C._acceleration;
-
           float ex = axis_X._target_pos - tx_packet.x;
           float ey = axis_Y._target_pos - tx_packet.y;
           float ez = axis_Z1._target - tx_packet.z;
@@ -307,22 +331,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
             }
           }
 
-        }
-
-        if(++led_counter >= 10000){
-          led_counter = 0;
-          HAL_GPIO_TogglePin(LED_1_GPIO_Port, LED_1_Pin);
-
-          // watchdog spi3 raspi
-          if (hspi3.State == HAL_SPI_STATE_READY) {
-            HAL_SPI_DMAStop(&hspi3); 
-            __HAL_SPI_CLEAR_OVRFLAG(&hspi3);
-            __HAL_SPI_CLEAR_FREFLAG(&hspi3);
-            HAL_SPI_TransmitReceive_DMA(&hspi3, spi3_tx_buf_active, spi3_rx_buf, sizeof(SPIPacket));
-          }
-
-          // sleep steppers
-          sleep_motors();
         }
 
         if(machine_state == HOMING){
@@ -351,29 +359,15 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
         } else if(machine_state == RUN ){
 
-          // error if max limits are violeted
-          if (enc_rot_A._converted_value < -15.0f || enc_rot_A._converted_value > 91.5f) {
-            __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 0);
-            __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
-            __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 0);
-            __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_4, 0);
-            __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_4, 0);
-            __HAL_TIM_SET_COMPARE(&htim15, TIM_CHANNEL_1, 0);
-            __HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_2, 0);
-
-            HAL_GPIO_WritePin(EN_STEPPERS_GPIO_Port, EN_STEPPERS_Pin, GPIO_PIN_SET);
-
-            machine_state = INIT;
-            return;
+          if(!check_hard_limits()){
+            // continuity
+            axis_X._target_pos += axis_X._target_vel * dt;
+            axis_Y._target_pos += axis_Y._target_vel * dt;
+            PID_compute_vel(&axis_X, dt);
+            PID_compute_vel(&axis_Y, dt);
+            motor_command(&axis_X, &htim1, TIM_CHANNEL_1, TIM_CHANNEL_2);
+            motor_command(&axis_Y, &htim1, TIM_CHANNEL_3, TIM_CHANNEL_4);
           }
-
-          // continuity
-          axis_X._target_pos += axis_X._target_vel * dt;
-          axis_Y._target_pos += axis_Y._target_vel * dt;
-          PID_compute_vel(&axis_X, dt);
-          PID_compute_vel(&axis_Y, dt);
-          motor_command(&axis_X, &htim1, TIM_CHANNEL_1, TIM_CHANNEL_2);
-          motor_command(&axis_Y, &htim1, TIM_CHANNEL_3, TIM_CHANNEL_4);
 
         } else if(machine_state == TUNING){ // skip PID
           motor_command(&axis_X, &htim1, TIM_CHANNEL_1, TIM_CHANNEL_2);
@@ -385,6 +379,24 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
           __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
           __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 0);
           __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_4, 0);
+        }
+
+
+        // 1Hz Led toggle as life status
+        if(++led_counter >= 10000){
+          led_counter = 0;
+          HAL_GPIO_TogglePin(LED_1_GPIO_Port, LED_1_Pin);
+
+          // watchdog spi3 raspi
+          if (hspi3.State == HAL_SPI_STATE_READY) {
+            HAL_SPI_DMAStop(&hspi3); 
+            __HAL_SPI_CLEAR_OVRFLAG(&hspi3);
+            __HAL_SPI_CLEAR_FREFLAG(&hspi3);
+            HAL_SPI_TransmitReceive_DMA(&hspi3, spi3_tx_buf_active, spi3_rx_buf, sizeof(SPIPacket));
+          }
+
+          // sleep steppers
+          sleep_motors();
         }
     }
 }
@@ -559,7 +571,7 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
     __HAL_SPI_CLEAR_OVRFLAG(&hspi3); 
     __HAL_SPI_CLEAR_FREFLAG(&hspi3);
     
-    if (packet.start == 0xAA || packet.start == 0xCC || packet.start == 0xDD || packet.start == 0xEE || packet.start == 0xFF) {
+    if (packet.start == 0xAA || packet.start == 0xCC || packet.start == 0xDD || packet.start == 0xEE || packet.start == 0xFF || packet.start == 0x77) {
       HAL_SPI_TransmitReceive_DMA(&hspi3, spi3_tx_buf_active, spi3_rx_buf, sizeof(SPIPacket));
     } else{
       HAL_SPI_DMAStop(&hspi3); // noise, restart it at 1s period
