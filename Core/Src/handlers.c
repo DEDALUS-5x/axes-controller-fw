@@ -424,9 +424,7 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
         update_rotary_encoder(&enc_rot_Y, spi1_rx_buf[0], IN_PERIOD);
     }
     
-  }
-
-  else if(hspi -> Instance == SPI2){
+  } else if(hspi -> Instance == SPI2){
 
     HAL_GPIO_WritePin(SPI2_CSS_GPIO_Port, SPI2_CSS_Pin, GPIO_PIN_SET);
     SCB_InvalidateDCache_by_Addr((uint32_t *)spi2_rx_buf, sizeof(spi2_rx_buf));
@@ -436,9 +434,8 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
     } else {
         update_rotary_encoder(&enc_rot_X, spi2_rx_buf[0], IN_PERIOD);
     }
-  }
-
-  else if(hspi -> Instance == SPI4){
+  
+  } else if(hspi -> Instance == SPI4){
 
     HAL_GPIO_WritePin(SPI4_CSS_GPIO_Port, SPI4_CSS_Pin, GPIO_PIN_SET);
     SCB_InvalidateDCache_by_Addr((uint32_t *)spi4_rx_buf, sizeof(spi4_rx_buf));
@@ -448,9 +445,8 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
     } else {
         update_rotary_encoder(&enc_rot_A, spi4_rx_buf[0], IN_PERIOD);
     }
-  }
-
-  else if(hspi -> Instance == SPI6){
+  
+  } else if(hspi -> Instance == SPI6){
 
     HAL_GPIO_WritePin(SPI6_CSS_GPIO_Port, SPI6_CSS_Pin, GPIO_PIN_SET);
     SCB_InvalidateDCache_by_Addr((uint32_t *)spi6_rx_buf, sizeof(spi6_rx_buf));
