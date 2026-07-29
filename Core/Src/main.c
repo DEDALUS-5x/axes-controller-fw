@@ -31,7 +31,7 @@
 #include "types.h"
 #include "ctrl.h"
 #include "handlers.h"
-// #include <stdio.h>
+#include <stdio.h>
 
 /* USER CODE END Includes */
 
@@ -427,7 +427,7 @@ int main(void)
   HAL_GPIO_TogglePin(LED_1_GPIO_Port, LED_1_Pin);
   HAL_Delay(500);
 
-  machine_state = RUN;
+  machine_state = INIT;
 
   axis_X._target_pos = 0.0f;
   axis_X._target_vel = 0.0f;
@@ -456,7 +456,6 @@ int main(void)
     /* USER CODE BEGIN 3 */
 
     // DEBUG prints
-/*
     __disable_irq();
     // uint16_t raw_y = spi2_rx_buf[0];
     float pos_y = axis_Y._enc_lin->_converted_value;
@@ -472,7 +471,6 @@ int main(void)
     
     HAL_UART_Transmit(&huart1, (uint8_t*)serial_buf, strlen(serial_buf), 10);
     HAL_Delay(100);
-    */
 
   }
   /* USER CODE END 3 */

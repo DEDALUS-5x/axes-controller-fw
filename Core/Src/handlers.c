@@ -26,6 +26,8 @@ static uint8_t y_homed = 0;
 static uint8_t z_homed = 0;
 static uint8_t first_calib = 0;
 
+static uint8_t dummy_homing = 0;
+
 static uint8_t sleeping = 0;
 
 void update_rotary_encoder(Encoder *enc, uint16_t raw_spi, float dt){
@@ -85,6 +87,7 @@ void sleep_motors(void) {
   if(HAL_GetTick() - last_spi_msg > MOT_SLEEP_TIMEOUT && machine_state != HOMING && !first_calib) {
     HAL_GPIO_WritePin(EN_STEPPERS_GPIO_Port, EN_STEPPERS_Pin, GPIO_PIN_SET);
     sleeping = 1;
+    dummy_homing = 0;
   }
 }
 
@@ -102,7 +105,15 @@ uint8_t check_hard_limits(void){
   // error if max limits are violeted
   float error_x = fabsf(axis_X._target_pos - enc_lin_X._converted_value);
   float error_y = fabsf(axis_Y._target_pos - enc_lin_Y._converted_value);
-  if (enc_rot_A._converted_value < -15.0f || enc_rot_A._converted_value > 91.5f || error_x > MAX_FOLLOWING_ERROR || error_y > MAX_FOLLOWING_ERROR) {
+  if (!first_calib && (enc_rot_A._converted_value < -15.0f || enc_rot_A._converted_value > 91.5f || error_x > MAX_FOLLOWING_ERROR || error_y > MAX_FOLLOWING_ERROR)) {
+    axis_X._pid_vel._output = 500.0f;
+    axis_Y._pid_vel._output = -500.0f;
+    motor_command(&axis_X, &htim1, TIM_CHANNEL_1, TIM_CHANNEL_2);
+    motor_command(&axis_Y, &htim1, TIM_CHANNEL_3, TIM_CHANNEL_4);
+    axis_X._pid_vel._output = 0.0f;
+    axis_Y._pid_vel._output = 0.0f;
+    motor_command(&axis_X, &htim1, TIM_CHANNEL_1, TIM_CHANNEL_2);
+    motor_command(&axis_Y, &htim1, TIM_CHANNEL_3, TIM_CHANNEL_4);
     __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 0);
     __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
     __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 0);
@@ -110,10 +121,11 @@ uint8_t check_hard_limits(void){
     __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_4, 0);
     __HAL_TIM_SET_COMPARE(&htim15, TIM_CHANNEL_1, 0);
     __HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_2, 0);
+    
 
     HAL_GPIO_WritePin(EN_STEPPERS_GPIO_Port, EN_STEPPERS_Pin, GPIO_PIN_SET);
 
-    machine_state = INIT;
+    machine_state = RUN;
     return 1;
 
   } else{
@@ -350,16 +362,18 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
           motor_command(&axis_Y, &htim1, TIM_CHANNEL_3, TIM_CHANNEL_4);
 
           if(z_homed == 0){
-            axis_Z1._current_speed_hz = -2.0f;
+            axis_Z1._current_speed_hz = -5.0f;
+            axis_Z2._current_speed_hz = -5.0f;
           } else{
             axis_Z1._current_speed_hz = 0.0f;
+            axis_Z2._current_speed_hz = 0.0f;
           }
           stepper_command(axis_Z1._current_speed_hz, axis_Z1.steps_per_unit, &htim17, TIM_CHANNEL_1, DIR_Z1_GPIO_Port, DIR_Z1_Pin, 0);  // master-slave
           stepper_command(axis_Z2._current_speed_hz, axis_Z2.steps_per_unit, &htim3, TIM_CHANNEL_2, DIR_Z2_GPIO_Port, DIR_Z2_Pin, 0);  // master-slave
 
         } else if(machine_state == RUN ){
 
-          if(!check_hard_limits()){
+          // if(!check_hard_limits() && !sleeping){
             // continuity
             axis_X._target_pos += axis_X._target_vel * dt;
             axis_Y._target_pos += axis_Y._target_vel * dt;
@@ -367,7 +381,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
             PID_compute_vel(&axis_Y, dt);
             motor_command(&axis_X, &htim1, TIM_CHANNEL_1, TIM_CHANNEL_2);
             motor_command(&axis_Y, &htim1, TIM_CHANNEL_3, TIM_CHANNEL_4);
-          }
+          // }
 
         } else if(machine_state == TUNING){ // skip PID
           motor_command(&axis_X, &htim1, TIM_CHANNEL_1, TIM_CHANNEL_2);
@@ -469,7 +483,7 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
     // SCB_CleanDCache_by_Addr((uint32_t *)spi3_tx_buf_active, sizeof(SPITxPacket));
     // HAL_SPI_TransmitReceive_DMA(&hspi3, spi3_tx_buf_active, spi3_rx_buf, sizeof(SPIPacket));
 
-    if (packet.start == 0xAA && machine_state == RUN) {
+    if (packet.start == 0xAA && (machine_state == RUN || machine_state == HOMING)) {
 
       if(sleeping){
         sleeping = 0;
@@ -515,24 +529,27 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
         HAL_GPIO_WritePin(EN_STEPPERS_GPIO_Port, EN_STEPPERS_Pin, RESET);
       }      
 
-      machine_state = HOMING;
-      axis_X._pid_vel._output = -1.0f;
-      axis_Y._pid_vel._output = -1.0f;
-      axis_Z1._current_speed_hz = -2.0f;
-      axis_Z2._current_speed_hz = -2.0f;
-      axis_Z2._target = 0.0f;
-      axis_A1._target = 0.0f;
-      axis_A2._target = 0.0f;
-      axis_C._target = 0.0f;
+      if(!dummy_homing){
+        machine_state = HOMING;
+        dummy_homing = 1;
+        axis_X._pid_vel._output = -1.0f;
+        axis_Y._pid_vel._output = -1.0f;
+        axis_Z1._current_speed_hz = -5.0f;
+        axis_Z2._current_speed_hz = -5.0f;
+        axis_Z2._target = 0.0f;
+        axis_A1._target = 0.0f;
+        axis_A2._target = 0.0f;
+        axis_C._target = 0.0f;
 
-      axis_A1._in_position = 0;
-      axis_A2._in_position = 0;
-      axis_C._in_position = 0;
+        axis_A1._in_position = 0;
+        axis_A2._in_position = 0;
+        axis_C._in_position = 0;
 
-      x_homed = 0;
-      y_homed = 0;
-      z_homed = 0;
-
+        x_homed = 0;
+        y_homed = 0;
+        z_homed = 0;
+      }
+      
       // motors command already embedded in tim6 handler. just keep a constnat pid output (pid disabled)
     }
 
@@ -693,13 +710,20 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
       axis_Y._target_pos = 50.0f;
       axis_X._target_pos = 100.0f;
 
-      machine_state  = RUN;
+      machine_state = RUN;
 
     }
   
   } else if(machine_state == RUN) {
 
+    // machine_state = HOMING;
+
     // ERROR! physical violations, stop motors
+    axis_X._pid_vel._output = 500.0f;
+    axis_Y._pid_vel._output = -500.0f;
+    motor_command(&axis_X, &htim1, TIM_CHANNEL_1, TIM_CHANNEL_2);
+    motor_command(&axis_Y, &htim1, TIM_CHANNEL_3, TIM_CHANNEL_4);
+    HAL_Delay(1000);
     __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 0);
     __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
     __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 0);
