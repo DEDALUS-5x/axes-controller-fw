@@ -1,4 +1,8 @@
 /*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2026 Leonardo Pasquato
+ */
+/*
 
    ____            _             _ 
   / ___|___  _ __ | |_ _ __ ___ | |
