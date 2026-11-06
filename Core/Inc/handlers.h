@@ -34,13 +34,21 @@
 #define RUN 2
 #define ERROR 3
 #define TUNING 4
+#define BACKOFF 5 // limit violation in RUN: timed release of the switch, then ERROR
+
+// Limit-violation handling (endstop hit in RUN). Tune BACKOFF_DUTY / BACKOFF_PERIODS
+// so that the carriage is released from the switch on your machine.
+#define BACKOFF_DUTY 500.0f   // PWM counts (of 11000) applied to the axis that hit its endstop
+#define BACKOFF_PERIODS 10000 // control periods at 10 kHz, i.e. 1 s
 
 /*
 MACHINE STATE
 - 0: INIT
 - 1: HOMING
 - 2: RUN
-- 3: ERROR
+- 3: ERROR (latched; left only by a homing command 0xCC)
+- 4: TUNING
+- 5: BACKOFF
 */
 extern uint8_t machine_state;
 

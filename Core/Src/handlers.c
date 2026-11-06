@@ -34,6 +34,11 @@ static uint8_t dummy_homing = 0;
 
 static uint8_t sleeping = 0;
 
+// Limit-violation back-off: written by the endstop ISR, consumed by the TIM6 ISR
+static volatile uint16_t backoff_ticks = 0;
+static volatile float backoff_duty_x = 0.0f;
+static volatile float backoff_duty_y = 0.0f;
+
 void update_rotary_encoder(Encoder *enc, uint16_t raw_spi, float dt){
 
   if (raw_spi & 0x4000) {
@@ -390,6 +395,19 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
         } else if(machine_state == TUNING){ // skip PID
           motor_command(&axis_X, &htim1, TIM_CHANNEL_1, TIM_CHANNEL_2);
           motor_command(&axis_Y, &htim1, TIM_CHANNEL_3, TIM_CHANNEL_4);
+
+        } else if(machine_state == BACKOFF){ // limit violation: timed release of the switch, then latch
+          if(backoff_ticks > 0){
+            backoff_ticks--;
+            axis_X._pid_vel._output = backoff_duty_x;
+            axis_Y._pid_vel._output = backoff_duty_y;
+          } else {
+            axis_X._pid_vel._output = 0.0f;
+            axis_Y._pid_vel._output = 0.0f;
+            machine_state = ERROR;
+          }
+          motor_command(&axis_X, &htim1, TIM_CHANNEL_1, TIM_CHANNEL_2);
+          motor_command(&axis_Y, &htim1, TIM_CHANNEL_3, TIM_CHANNEL_4);
         
         } else{
 
@@ -571,7 +589,7 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
       axis_Y._pid_vel._output = 0.0f;
     }
 
-    if(packet.start == 0xFF){
+    if(packet.start == 0xFF && machine_state != ERROR && machine_state != BACKOFF){ // a fault is left only by homing
       machine_state = TUNING;
       axis_X._pid_vel._output = packet.vx;
       axis_Y._pid_vel._output = packet.vy;
@@ -606,6 +624,22 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
  |_____|_| |_|\__,_| |____/ \__\___/| .__/|___/
                                     |_|        
 */
+
+// Fail-safe state of every actuator output: DC PWM and step timers at zero, drivers disabled.
+// Non-blocking, safe to call from interrupt context.
+static void stop_all_outputs(void) {
+  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 0);
+  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
+  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 0);
+  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_4, 0);
+  __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_4, 0);
+  __HAL_TIM_SET_COMPARE(&htim17, TIM_CHANNEL_1, 0);
+  __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, 0);
+  __HAL_TIM_SET_COMPARE(&htim15, TIM_CHANNEL_1, 0);
+  __HAL_TIM_SET_COMPARE(&htim16, TIM_CHANNEL_1, 0);
+  __HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_2, 0);
+  HAL_GPIO_WritePin(EN_STEPPERS_GPIO_Port, EN_STEPPERS_Pin, GPIO_PIN_SET);
+}
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 
@@ -720,25 +754,23 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
   
   } else if(machine_state == RUN) {
 
-    // machine_state = HOMING;
+    // Limit violation. This callback runs at interrupt priority 0 and SysTick at 15, so
+    // it must never block: HAL_Delay() here would never return and freeze the whole board.
 
-    // ERROR! physical violations, stop motors
-    axis_X._pid_vel._output = 500.0f;
-    axis_Y._pid_vel._output = -500.0f;
-    motor_command(&axis_X, &htim1, TIM_CHANNEL_1, TIM_CHANNEL_2);
-    motor_command(&axis_Y, &htim1, TIM_CHANNEL_3, TIM_CHANNEL_4);
-    HAL_Delay(1000);
-    __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 0);
-    __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
-    __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 0);
-    __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_4, 0);
-    __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_4, 0);
-    __HAL_TIM_SET_COMPARE(&htim15, TIM_CHANNEL_1, 0);
-    __HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_2, 0);
+    // 1) fail-safe first: every output off, drivers disabled
+    stop_all_outputs();
 
-    // disable steppers
-    HAL_GPIO_WritePin(EN_STEPPERS_GPIO_Port, EN_STEPPERS_Pin, GPIO_PIN_SET);
+    // 2) release the switch: only the axis whose endstop fired backs off, from the
+    //    TIM6 control interrupt (state BACKOFF); the fault then latches in ERROR.
+    //    The Z endstop drives steppers only, so it has no back-off.
+    backoff_duty_x = (GPIO_Pin == ES_X_Pin)  ?  BACKOFF_DUTY : 0.0f;
+    backoff_duty_y = (GPIO_Pin == ES_Y1_Pin) ? -BACKOFF_DUTY : 0.0f;
+    backoff_ticks  = (GPIO_Pin == ES_Z1_Pin) ? 1 : BACKOFF_PERIODS;
 
-    machine_state = RUN;
+    // 3) allow recovery: a new homing command (0xCC) re-enables the drivers and restarts homing
+    sleeping = 1;
+    dummy_homing = 0;
+
+    machine_state = BACKOFF;
   }
 }
